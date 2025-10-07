@@ -7,8 +7,4 @@ Document Models - 공통 모듈 사용
 from shared_core import Document, DocumentChunk, ProcessingJob
 
 # 기존 코드와의 호환성을 위한 별칭들
-__all__ = [
-    "Document",
-    "DocumentChunk", 
-    "ProcessingJob"
-]
+__all__ = ["Document", "DocumentChunk", "ProcessingJob"]
