@@ -324,6 +324,10 @@ def create_app():
     async def read_chat():
         return FileResponse("llm_chat_client.html")
     
+    @app.get("/plc-search")
+    async def read_plc_search():
+        return FileResponse("plc-search.html")
+    
     # Health check endpoint
     @app.get("/health")
     async def health_check():

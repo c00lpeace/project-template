@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLC 계층 검색 - Chat API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .nav-links {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-link {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .search-section {
+            margin-bottom: 30px;
+        }
+
+        .search-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group select:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .results-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            flex: 1;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card.active {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.5);
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 30px;
+        }
+
+        #col-short {
+            width: 80px;
+        }
+
+        th:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+        }
+
+        th .sort-icon {
+            position: absolute;
+            right: 10px;
+            opacity: 0.5;
+            font-size: 0.8rem;
+        }
+
+        th.sort-asc .sort-icon::after {
+            content: '▲';
+            opacity: 1;
+        }
+
+        th.sort-desc .sort-icon::after {
+            content: '▼';
+            opacity: 1;
+        }
+
+        tbody tr {
+            transition: all 0.3s;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-active {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .badge-inactive {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: ".";
+            }
+
+            40% {
+                content: "..";
+            }
+
+            60%,
+            100% {
+                content: "...";
+            }
+        }
+
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+
+        .success-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .info-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="nav-links">
+                <a href="/docs" class="nav-link" target="_blank">API 문서</a>
+                <a href="/" class="nav-link">홈</a>
+            </div>
+            <h1>🔍 PLC 계층 검색</h1>
+            <p>Plant → 공정 → Line → 장비그룹 → 호기 순으로 검색 <span class="info-badge">⚡ Plant 선택 시에만 DB 조회</span></p>
+        </div>
+
+        <div class="content">
+            <!-- 검색 섹션 -->
+            <div class="search-section">
+                <h2>📋 검색 조건</h2>
+
+                <div id="messageArea"></div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="plant">1️⃣ Plant</label>
+                        <select id="plant">
+                            <option value="">-- Plant 선택 --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="process">2️⃣ 공정</label>
+                        <select id="process" disabled>
+                            <option value="">-- 공정 선택 --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="line">3️⃣ Line</label>
+                        <select id="line" disabled>
+                            <option value="">-- Line 선택 --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="equipmentGroup">4️⃣ 장비그룹</label>
+                        <select id="equipmentGroup" disabled>
+                            <option value="">-- 장비그룹 선택 --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="unit">5️⃣ 호기</label>
+                        <select id="unit" disabled>
+                            <option value="">-- 호기 선택 --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="searchPlcs()">🔍 PLC 검색</button>
+                    <button class="btn btn-secondary" onclick="resetForm()">🔄 초기화</button>
+                </div>
+            </div>
+
+            <!-- 결과 섹션 -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <h2>📊 검색 결과</h2>
+
+                <div class="stats">
+                    <div class="stat-card active" id="activeCard" onclick="showActiveList()">
+                        <div class="number" id="totalCount">0</div>
+                        <div class="label">총 활성 PLC</div>
+                    </div>
+                    <div class="stat-card" id="inactiveCard" onclick="showInactiveList()">
+                        <div class="number" id="inactiveCount">0</div>
+                        <div class="label">비활성 PLC</div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('plc_id')">PLC ID<span class="sort-icon"></span></th>
+                                <th onclick="sortTable('plant')">Plant<span class="sort-icon"></span></th>
+                                <th style="width: 80px;" onclick="sortTable('process')">공정<span
+                                        class="sort-icon"></span></th>
+                                <th onclick="sortTable('line')">Line<span class="sort-icon"></span></th>
+                                <th style="width: 80px;" onclick="sortTable('equipment_group')">장비그룹<span class="sort-icon"></span></th>
+                                <th style="width: 80px;" onclick="sortTable('unit')">호기<span class="sort-icon"></span></th>
+                                <th onclick="sortTable('plc_name')">PLC 명칭<span class="sort-icon"></span></th>
+                                <th onclick="sortTable('create_dt')">생성일시<span class="sort-icon"></span></th>
+                                <th style="width: 90px;">상태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+
+        // 전역 변수: Plant 선택 시 가져온 전체 PLC 데이터 저장
+        let allPlcData = [];
+        let inactivePlcData = []; // 비활성 PLC 데이터
+        let currentPlant = '';
+        let currentView = 'active'; // 현재 보여지는 목록 (active/inactive)
+        let currentDisplayedData = []; // 현재 표시 중인 데이터
+        let sortColumn = null; // 정렬 중인 열
+        let sortDirection = 'asc'; // 정렬 방향
+
+        // 페이지 로드 시 Plant 목록 로드
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadPlants();
+        });
+
+        // Plant 목록 로드 (DB 호출)
+        async function loadPlants() {
+            try {
+                const response = await fetch(`${API_BASE}/plcs/hierarchy/values?level=plant`);
+                const data = await response.json();
+
+                const plantSelect = document.getElementById('plant');
+                plantSelect.innerHTML = '<option value="">-- Plant 선택 --</option>';
+
+                data.values.forEach(plant => {
+                    const option = document.createElement('option');
+                    option.value = plant;
+                    option.textContent = plant;
+                    plantSelect.appendChild(option);
+                });
+            } catch (error) {
+                showMessage('Plant 목록 로드 실패: ' + error.message, 'error');
+            }
+        }
+
+        // Plant 선택 시 - 전체 PLC 데이터 가져오기 (DB 호출 1회)
+        document.getElementById('plant').addEventListener('change', async (e) => {
+            const plant = e.target.value;
+
+            // 하위 select 초기화
+            resetSelects(['process', 'line', 'equipmentGroup', 'unit']);
+            allPlcData = [];
+            inactivePlcData = [];
+            currentPlant = '';
+
+            if (!plant) return;
+
+            try {
+                showMessage('데이터 로딩 중...', 'info');
+
+                // Plant에 해당하는 모든 활성 PLC 데이터 한번에 가져오기
+                const response = await fetch(`${API_BASE}/plcs?plant=${encodeURIComponent(plant)}`);
+                const data = await response.json();
+
+                allPlcData = data.items;
+                currentPlant = plant;
+
+                // 공정 목록 추출 (클라이언트 필터링)
+                loadProcessesFromCache();
+
+                showMessage(`✅ ${data.total}개의 활성 PLC 데이터를 로드했습니다. (DB 조회 1회)`, 'success');
+            } catch (error) {
+                showMessage('데이터 로드 실패: ' + error.message, 'error');
+            }
+        });
+
+        // 공정 목록 추출 (클라이언트 필터링)
+        function loadProcessesFromCache() {
+            const processes = [...new Set(allPlcData.map(plc => plc.process))].sort();
+
+            const processSelect = document.getElementById('process');
+            processSelect.innerHTML = '<option value="">-- 공정 선택 --</option>';
+            processSelect.disabled = false;
+
+            processes.forEach(process => {
+                const option = document.createElement('option');
+                option.value = process;
+                option.textContent = process;
+                processSelect.appendChild(option);
+            });
+        }
+
+        // 공정 선택 시 (클라이언트 필터링)
+        document.getElementById('process').addEventListener('change', (e) => {
+            const process = e.target.value;
+
+            resetSelects(['line', 'equipmentGroup', 'unit']);
+
+            if (!process) return;
+
+            // 선택된 공정에 해당하는 Line 목록 추출
+            const filteredData = allPlcData.filter(plc => plc.process === process);
+            const lines = [...new Set(filteredData.map(plc => plc.line))].sort();
+
+            const lineSelect = document.getElementById('line');
+            lineSelect.innerHTML = '<option value="">-- Line 선택 --</option>';
+            lineSelect.disabled = false;
+
+            lines.forEach(line => {
+                const option = document.createElement('option');
+                option.value = line;
+                option.textContent = line;
+                lineSelect.appendChild(option);
+            });
+        });
+
+        // Line 선택 시 (클라이언트 필터링)
+        document.getElementById('line').addEventListener('change', (e) => {
+            const process = document.getElementById('process').value;
+            const line = e.target.value;
+
+            resetSelects(['equipmentGroup', 'unit']);
+
+            if (!line) return;
+
+            // 선택된 Line에 해당하는 장비그룹 목록 추출
+            const filteredData = allPlcData.filter(plc =>
+                plc.process === process && plc.line === line
+            );
+            const equipmentGroups = [...new Set(filteredData.map(plc => plc.equipment_group))].sort();
+
+            const equipmentGroupSelect = document.getElementById('equipmentGroup');
+            equipmentGroupSelect.innerHTML = '<option value="">-- 장비그룹 선택 --</option>';
+            equipmentGroupSelect.disabled = false;
+
+            equipmentGroups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group;
+                option.textContent = group;
+                equipmentGroupSelect.appendChild(option);
+            });
+        });
+
+        // 장비그룹 선택 시 (클라이언트 필터링)
+        document.getElementById('equipmentGroup').addEventListener('change', (e) => {
+            const process = document.getElementById('process').value;
+            const line = document.getElementById('line').value;
+            const equipmentGroup = e.target.value;
+
+            resetSelects(['unit']);
+
+            if (!equipmentGroup) return;
+
+            // 선택된 장비그룹에 해당하는 호기 목록 추출
+            const filteredData = allPlcData.filter(plc =>
+                plc.process === process &&
+                plc.line === line &&
+                plc.equipment_group === equipmentGroup
+            );
+            const units = [...new Set(filteredData.map(plc => plc.unit))].sort();
+
+            const unitSelect = document.getElementById('unit');
+            unitSelect.innerHTML = '<option value="">-- 호기 선택 --</option>';
+            unitSelect.disabled = false;
+
+            units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit;
+                option.textContent = unit;
+                unitSelect.appendChild(option);
+            });
+        });
+
+        // Select 초기화
+        function resetSelects(selectIds) {
+            selectIds.forEach(id => {
+                const select = document.getElementById(id);
+                const labelMap = {
+                    'process': '공정',
+                    'line': 'Line',
+                    'equipmentGroup': '장비그룹',
+                    'unit': '호기'
+                };
+                select.innerHTML = `<option value="">-- ${labelMap[id]} 선택 --</option>`;
+                select.disabled = true;
+            });
+        }
+
+        // 비활성 PLC 데이터 조회 (API 호출)
+        async function fetchInactivePlcData(plant, process, line, equipmentGroup, unit) {
+            try {
+                // API URL 구성
+                let url = `${API_BASE}/plcs?is_active=false&plant=${encodeURIComponent(plant)}`;
+                if (process) url += `&process=${encodeURIComponent(process)}`;
+                if (line) url += `&line=${encodeURIComponent(line)}`;
+                if (equipmentGroup) url += `&equipment_group=${encodeURIComponent(equipmentGroup)}`;
+                if (unit) url += `&unit=${encodeURIComponent(unit)}`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                return data.items; // 전체 데이터 반환
+            } catch (error) {
+                console.error('비활성 PLC 데이터 조회 실패:', error);
+                return [];
+            }
+        }
+
+        // PLC 검색 (클라이언트 필터링 + 비활성 데이터 API 조회)
+        async function searchPlcs() {
+            const plant = document.getElementById('plant').value;
+            const process = document.getElementById('process').value;
+            const line = document.getElementById('line').value;
+            const equipmentGroup = document.getElementById('equipmentGroup').value;
+            const unit = document.getElementById('unit').value;
+
+            if (!plant) {
+                showMessage('Plant를 선택해주세요.', 'error');
+                return;
+            }
+
+            if (allPlcData.length === 0) {
+                showMessage('데이터가 없습니다. Plant를 다시 선택해주세요.', 'error');
+                return;
+            }
+
+            // 1. 활성 PLC는 클라이언트에서 필터링
+            let filteredData = allPlcData.filter(plc => plc.plant === plant);
+
+            if (process) {
+                filteredData = filteredData.filter(plc => plc.process === process);
+            }
+            if (line) {
+                filteredData = filteredData.filter(plc => plc.line === line);
+            }
+            if (equipmentGroup) {
+                filteredData = filteredData.filter(plc => plc.equipment_group === equipmentGroup);
+            }
+            if (unit) {
+                filteredData = filteredData.filter(plc => plc.unit === unit);
+            }
+
+            // 2. 비활성 PLC 데이터는 API로 조회해서 저장
+            inactivePlcData = await fetchInactivePlcData(plant, process, line, equipmentGroup, unit);
+
+            // 3. 결과 표시 (기본은 활성 목록)
+            currentView = 'active';
+            displayResults(filteredData, 'active');
+            updateStats(filteredData.length, inactivePlcData.length);
+            showMessage(`✅ 검색 완료: 활성 ${filteredData.length}개, 비활성 ${inactivePlcData.length}개`, 'success');
+        }
+
+        // 활성 PLC 목록 보기
+        function showActiveList() {
+            if (currentView === 'active') return;
+
+            const plant = document.getElementById('plant').value;
+            const process = document.getElementById('process').value;
+            const line = document.getElementById('line').value;
+            const equipmentGroup = document.getElementById('equipmentGroup').value;
+            const unit = document.getElementById('unit').value;
+
+            // 활성 PLC 필터링
+            let filteredData = allPlcData.filter(plc => plc.plant === plant);
+
+            if (process) filteredData = filteredData.filter(plc => plc.process === process);
+            if (line) filteredData = filteredData.filter(plc => plc.line === line);
+            if (equipmentGroup) filteredData = filteredData.filter(plc => plc.equipment_group === equipmentGroup);
+            if (unit) filteredData = filteredData.filter(plc => plc.unit === unit);
+
+            currentView = 'active';
+            currentDisplayedData = filteredData;
+            sortColumn = null; // 정렬 초기화
+            sortDirection = 'asc';
+            renderTable(filteredData, 'active');
+            updateCardActive('active');
+            updateSortIcons();
+        }
+
+        // 비활성 PLC 목록 보기
+        function showInactiveList() {
+            if (currentView === 'inactive' || inactivePlcData.length === 0) return;
+
+            currentView = 'inactive';
+            currentDisplayedData = inactivePlcData;
+            sortColumn = null; // 정렬 초기화
+            sortDirection = 'asc';
+            renderTable(inactivePlcData, 'inactive');
+            updateCardActive('inactive');
+            updateSortIcons();
+        }
+
+        // 통계 업데이트
+        function updateStats(activeCount, inactiveCount) {
+            document.getElementById('totalCount').textContent = activeCount;
+            document.getElementById('inactiveCount').textContent = inactiveCount;
+            updateCardActive('active'); // 기본적으로 활성 카드 활성화
+        }
+
+        // 카드 활성화 상태 업데이트
+        function updateCardActive(type) {
+            const activeCard = document.getElementById('activeCard');
+            const inactiveCard = document.getElementById('inactiveCard');
+
+            if (type === 'active') {
+                activeCard.classList.add('active');
+                inactiveCard.classList.remove('active');
+            } else {
+                activeCard.classList.remove('active');
+                inactiveCard.classList.add('active');
+            }
+        }
+
+        // 테이블 정렬
+        function sortTable(column) {
+            // 같은 열을 클릭하면 방향 전환
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            // 현재 표시 중인 데이터 정렬
+            const sortedData = [...currentDisplayedData].sort((a, b) => {
+                let aValue = a[column];
+                let bValue = b[column];
+
+                // null 또는 undefined 처리
+                if (aValue == null) aValue = '';
+                if (bValue == null) bValue = '';
+
+                // 날짜 필드 처리
+                if (column === 'create_dt') {
+                    aValue = new Date(aValue);
+                    bValue = new Date(bValue);
+                }
+                // boolean 필드 처리
+                else if (column === 'is_active') {
+                    aValue = aValue ? 1 : 0;
+                    bValue = bValue ? 1 : 0;
+                }
+                // 문자열 필드는 대소문자 구분 없이
+                else if (typeof aValue === 'string') {
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+
+                if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // 정렬된 데이터로 테이블 다시 렌더링
+            renderTable(sortedData, currentView);
+            updateSortIcons();
+        }
+
+        // 정렬 아이콘 업데이트
+        function updateSortIcons() {
+            // 모든 헤더에서 정렬 클래스 제거
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+
+            // 현재 정렬 중인 열에 클래스 추가
+            if (sortColumn) {
+                const columnIndex = {
+                    'plc_id': 0,
+                    'plant': 1,
+                    'process': 2,
+                    'line': 3,
+                    'equipment_group': 4,
+                    'unit': 5,
+                    'plc_name': 6,
+                    'create_dt': 7,
+                    'is_active': 8
+                };
+                const th = document.querySelectorAll('th')[columnIndex[sortColumn]];
+                if (th) {
+                    th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            }
+        }
+
+        // 테이블 렌더링 (정렬용)
+        function renderTable(data, type = 'active') {
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">
+                            <div class="empty-state">
+                                <h3>${type === 'active' ? '활성' : '비활성'} PLC가 없습니다</h3>
+                                <p>다른 조건으로 검색해보세요.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            data.forEach(plc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${plc.plc_id}</strong></td>
+                    <td>${plc.plant}</td>
+                    <td>${plc.process}</td>
+                    <td>${plc.line}</td>
+                    <td>${plc.equipment_group}</td>
+                    <td>${plc.unit}</td>
+                    <td>${plc.plc_name || '-'}</td>
+                    <td>${new Date(plc.create_dt).toLocaleString('ko-KR')}</td>
+                    <td>
+                        <span class="badge ${plc.is_active ? 'badge-active' : 'badge-inactive'}">
+                            ${plc.is_active ? '활성' : '비활성'}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 결과 표시
+        function displayResults(data, type = 'active') {
+            currentDisplayedData = data; // 현재 데이터 저장
+            sortColumn = null; // 정렬 초기화
+            sortDirection = 'asc';
+            document.getElementById('resultsSection').style.display = 'block';
+
+            // 테이블 렌더링
+            renderTable(data, type);
+            updateSortIcons();
+
+            // 결과 섹션으로 스크롤
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // 폼 초기화
+        async function resetForm() {
+            document.getElementById('plant').value = '';
+            resetSelects(['process', 'line', 'equipmentGroup', 'unit']);
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('messageArea').innerHTML = '';
+            allPlcData = [];
+            inactivePlcData = [];
+            currentPlant = '';
+            currentView = 'active';
+            currentDisplayedData = [];
+            sortColumn = null;
+            sortDirection = 'asc';
+
+            await loadPlants();
+        }
+
+        // 메시지 표시
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            let className = 'success-message';
+
+            if (type === 'error') className = 'error-message';
+            else if (type === 'info') className = 'success-message';
+
+            messageArea.innerHTML = `<div class="${className}">${message}</div>`;
+
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>
