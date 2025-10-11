@@ -8,6 +8,7 @@ from ai_backend.api.services.llm_chat_service import LLMChatService
 from ai_backend.api.services.document_service import DocumentService
 from ai_backend.api.services.user_service import UserService
 from ai_backend.api.services.group_service import GroupService
+from ai_backend.api.services.plc_service import PlcService
 from ai_backend.database.base import Database
 from ai_backend.config import settings
 from ai_backend.cache.redis_client import get_redis_client
@@ -114,3 +115,10 @@ def get_group_service(
 ) -> GroupService:
     """그룹 관리 서비스 의존성 주입"""
     return GroupService(db=db)
+
+
+def get_plc_service(
+    db: Session = Depends(get_db)
+) -> PlcService:
+    """PLC 관리 서비스 의존성 주입"""
+    return PlcService(db=db)

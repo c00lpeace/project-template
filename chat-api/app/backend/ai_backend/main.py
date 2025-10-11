@@ -300,6 +300,10 @@ def create_app():
     from ai_backend.api.routers.group_router import router as group_router
     app.include_router(group_router, prefix=api_prefix)
     
+    # PLC 라우터 추가 (PLC 관리)
+    from ai_backend.api.routers.plc_router import router as plc_router
+    app.include_router(plc_router, prefix=api_prefix)
+    
     # CORS 설정 - 설정 파일에서 가져오기
     origins = settings.get_cors_origins()
     

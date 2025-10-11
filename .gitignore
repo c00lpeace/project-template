@@ -261,3 +261,4 @@ k8s/**/secret*.yaml
 # Local configuration files that should not be shared
 config/local_*
 *.env.backup
+chat-api/test_db.md
