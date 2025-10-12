@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-import os
+import glob
 import logging
 import logging.config
-import glob
+import os
 from datetime import datetime, timedelta
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
+
 from ai_backend.config import settings
 from ai_backend.core.global_exception_handlers import set_global_exception_handlers
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+
 
 def cleanup_old_logs():
     """
@@ -327,6 +329,12 @@ def create_app():
     @app.get("/plc-search")
     async def read_plc_search():
         return FileResponse("plc-search.html")
+    
+    # @app.get("/program-mapping")
+    @app.get("/pgm-mapping")
+    async def read_program_mapping():
+        return FileResponse("pgm-mapping.html")
+        # return FileResponse("program-mapping.html")
     
     # Health check endpoint
     @app.get("/health")

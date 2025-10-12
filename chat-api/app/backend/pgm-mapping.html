@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLC-프로그램 매핑 관리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* 헤더 */
+        .header {
+            background: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: #333;
+        }
+
+        .header .nav-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            color: #333;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        /* 컨텐츠 영역 */
+        .content {
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 600px;
+        }
+
+        /* 통계 카드 */
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            flex: 1;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* 테이블 */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 100px 40px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        /* 버튼 */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 5px;
+        }
+
+        .btn-edit {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #45a049;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+        }
+
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            font-size: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #1976d2;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 메시지 */
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .message.success {
+            background: #4caf50;
+        }
+
+        .message.error {
+            background: #f44336;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* 로딩 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .current-mapping {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>PLC - PGM 매핑 관리</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="nav-links">
+                    <a href="/" class="nav-link">🏠 Home</a>
+                    <a href="/plc-search" class="nav-link">🔍 PLC 검색</a>
+                </div>
+                <button class="btn-add" onclick="openAddModal()">➕ 매핑 추가</button>
+            </div>
+        </div>
+
+        <!-- 컨텐츠 -->
+        <div class="content">
+            <!-- 통계 -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="number" id="totalMappings">0</div>
+                    <div class="label">전체 매핑</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="totalPlcs">0</div>
+                    <div class="label">매핑된 PLC</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="totalPrograms">0</div>
+                    <div class="label">사용 중인 프로그램</div>
+                </div>
+            </div>
+
+            <!-- 테이블 -->
+            <div class="table-container" id="tableContainer">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>PLC ID</th>
+                            <th>PLC 명칭</th>
+                            <th>Plant</th>
+                            <th>공정</th>
+                            <th>Line</th>
+                            <th>장비그룹</th>
+                            <th>호기</th>
+                            <th>프로그램 ID</th>
+                            <th>프로그램 명칭</th>
+                            <th>버전</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mappingTableBody">
+                        <tr>
+                            <td colspan="11" style="text-align: center; padding: 40px;">
+                                <div class="loading">데이터를 불러오는 중...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 빈 상태 -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="icon">📋</div>
+                <h3>매핑된 목록이 없습니다</h3>
+                <p>[매핑 추가] 버튼을 눌러 PLC와 프로그램을 매핑하세요</p>
+                <button class="btn-add" onclick="openAddModal()">➕ 첫 매핑 추가하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 매핑 추가/수정 모달 -->
+    <div class="modal" id="mappingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">PLC - 프로그램 매핑</h2>
+                <button class="modal-close" onclick="closeModal()">✖</button>
+            </div>
+
+            <form id="mappingForm" onsubmit="saveMapping(event)">
+                <div class="form-group">
+                    <label>PLC 선택 *</label>
+                    <select id="plcSelect" required onchange="checkExistingMapping()">
+                        <option value="">-- PLC를 선택하세요 --</option>
+                    </select>
+                    <div id="currentMappingInfo" class="current-mapping" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>프로그램 선택 *</label>
+                    <select id="programSelect" required>
+                        <option value="">-- 프로그램을 선택하세요 --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>비고</label>
+                    <textarea id="notesInput" placeholder="비고를 입력하세요 (선택사항)"></textarea>
+                </div>
+
+                <div class="info-box">
+                    ℹ️ 이미 매핑되어 있는 PLC를 선택하면 프로그램이 변경됩니다 (UPSERT)
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">취소</button>
+                    <button type="submit" class="btn-save">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+        let mappings = [];
+        let plcs = [];
+        let programs = [];
+        let editingMappingId = null;
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadData();
+        });
+
+        // 전체 데이터 로드
+        async function loadData() {
+            try {
+                await Promise.all([
+                    loadMappings(),
+                    loadPlcs(),
+                    loadPrograms()
+                ]);
+            } catch (error) {
+                showMessage('데이터 로드 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 매핑 목록 조회
+        async function loadMappings() {
+            try {
+                const response = await fetch(`${API_BASE}/programs/mappings?page=1&page_size=1000`);
+                const data = await response.json();
+                mappings = data.items || [];
+                renderMappings();
+                updateStats();
+            } catch (error) {
+                console.error('매핑 목록 조회 실패:', error);
+                throw error;
+            }
+        }
+
+        // PLC 목록 조회
+        async function loadPlcs() {
+            try {
+                const response = await fetch(`${API_BASE}/plcs?page=1&page_size=1000&is_active=true`);
+                const data = await response.json();
+                plcs = data.items || [];
+            } catch (error) {
+                console.error('PLC 목록 조회 실패:', error);
+            }
+        }
+
+        // 프로그램 목록 조회
+        async function loadPrograms() {
+            try {
+                const response = await fetch(`${API_BASE}/programs?page=1&page_size=1000`);
+                const data = await response.json();
+                programs = data.items || [];
+            } catch (error) {
+                console.error('프로그램 목록 조회 실패:', error);
+            }
+        }
+
+        // 매핑 테이블 렌더링
+        function renderMappings() {
+            const tbody = document.getElementById('mappingTableBody');
+            const tableContainer = document.getElementById('tableContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (mappings.length === 0) {
+                tableContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            tableContainer.style.display = 'block';
+            emptyState.style.display = 'none';
+
+            tbody.innerHTML = mappings.map(mapping => `
+                <tr>
+                    <td><strong>${mapping.plc_id}</strong></td>
+                    <td>${mapping.plc_name || '-'}</td>
+                    <td>${mapping.plant || '-'}</td>
+                    <td>${mapping.process || '-'}</td>
+                    <td>${mapping.line || '-'}</td>
+                    <td>${mapping.equipment_group || '-'}</td>
+                    <td>${mapping.unit || '-'}</td>
+                    <td><strong>${mapping.pgm_id}</strong></td>
+                    <td>${mapping.pgm_name || '-'}</td>
+                    <td>${mapping.pgm_version || '-'}</td>
+                    <td>
+                        <button class="btn btn-edit" onclick="editMapping('${mapping.plc_id}')">수정</button>
+                        <button class="btn btn-delete" onclick="deleteMapping(${mapping.mapping_id}, '${mapping.plc_id}')">삭제</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            document.getElementById('totalMappings').textContent = mappings.length;
+            
+            const uniquePlcs = new Set(mappings.map(m => m.plc_id));
+            document.getElementById('totalPlcs').textContent = uniquePlcs.size;
+            
+            const uniquePrograms = new Set(mappings.map(m => m.pgm_id));
+            document.getElementById('totalPrograms').textContent = uniquePrograms.size;
+        }
+
+        // 매핑 추가 모달 열기
+        function openAddModal() {
+            editingMappingId = null;
+            document.getElementById('modalTitle').textContent = 'PLC - 프로그램 매핑 추가';
+            document.getElementById('mappingForm').reset();
+            document.getElementById('currentMappingInfo').style.display = 'none';
+            
+            populatePlcSelect();
+            populateProgramSelect();
+            
+            document.getElementById('mappingModal').classList.add('active');
+        }
+
+        // 매핑 수정 모달 열기
+        function editMapping(plcId) {
+            const mapping = mappings.find(m => m.plc_id === plcId);
+            if (!mapping) return;
+
+            editingMappingId = plcId;
+            document.getElementById('modalTitle').textContent = 'PLC - 프로그램 매핑 수정';
+            
+            populatePlcSelect();
+            populateProgramSelect();
+            
+            document.getElementById('plcSelect').value = mapping.plc_id;
+            document.getElementById('programSelect').value = mapping.pgm_id;
+            document.getElementById('notesInput').value = mapping.notes || '';
+            
+            checkExistingMapping();
+            
+            document.getElementById('mappingModal').classList.add('active');
+        }
+
+        // PLC 셀렉트 채우기
+        function populatePlcSelect() {
+            const select = document.getElementById('plcSelect');
+            select.innerHTML = '<option value="">-- PLC를 선택하세요 --</option>';
+            
+            plcs.forEach(plc => {
+                const option = document.createElement('option');
+                option.value = plc.plc_id;
+                option.textContent = `${plc.plc_id} - ${plc.plc_name || ''} (${plc.plant} ${plc.process})`;
+                select.appendChild(option);
+            });
+        }
+
+        // 프로그램 셀렉트 채우기
+        function populateProgramSelect() {
+            const select = document.getElementById('programSelect');
+            select.innerHTML = '<option value="">-- 프로그램을 선택하세요 --</option>';
+            
+            programs.forEach(program => {
+                const option = document.createElement('option');
+                option.value = program.pgm_id;
+                option.textContent = `${program.pgm_id} - ${program.pgm_name} (${program.pgm_version || 'N/A'})`;
+                select.appendChild(option);
+            });
+        }
+
+        // 기존 매핑 확인
+        function checkExistingMapping() {
+            const plcId = document.getElementById('plcSelect').value;
+            const infoDiv = document.getElementById('currentMappingInfo');
+            
+            if (!plcId) {
+                infoDiv.style.display = 'none';
+                return;
+            }
+
+            const existingMapping = mappings.find(m => m.plc_id === plcId);
+            
+            if (existingMapping) {
+                infoDiv.style.display = 'block';
+                infoDiv.innerHTML = `⚠️ 현재 매핑: <strong>${existingMapping.pgm_id}</strong> (${existingMapping.pgm_name}) → 저장 시 변경됩니다`;
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
+
+        // 매핑 저장 (UPSERT)
+        async function saveMapping(event) {
+            event.preventDefault();
+
+            const plcId = document.getElementById('plcSelect').value;
+            const pgmId = document.getElementById('programSelect').value;
+            const notes = document.getElementById('notesInput').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/programs/mappings/${plcId}/upsert`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pgm_id: pgmId,
+                        notes: notes,
+                        user: 'admin'
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '저장 실패');
+                }
+
+                showMessage('매핑이 저장되었습니다!', 'success');
+                closeModal();
+                await loadMappings();
+            } catch (error) {
+                showMessage('저장 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 매핑 삭제
+        async function deleteMapping(mappingId, plcId) {
+            if (!confirm(`PLC "${plcId}"의 매핑을 삭제하시겠습니까?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/programs/mappings/${mappingId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('삭제 실패');
+                }
+
+                showMessage('매핑이 삭제되었습니다!', 'success');
+                await loadMappings();
+            } catch (error) {
+                showMessage('삭제 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('mappingModal').classList.remove('active');
+            document.getElementById('mappingForm').reset();
+        }
+
+        // 메시지 표시
+        function showMessage(text, type) {
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            message.textContent = text;
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                message.remove();
+            }, 3000);
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('mappingModal').addEventListener('click', (e) => {
+            if (e.target.id === 'mappingModal') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+
+</html>
