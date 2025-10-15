@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 
 # 공통 모듈 사용
 from shared_core import Document
-from shared_core import DocumentService as BaseDocumentService, ProcessingJobService
+from shared_core import DocumentService as BaseDocumentService
+from shared_core import ProcessingJobService
 
 logger = logging.getLogger(__name__)
 
@@ -315,3 +316,239 @@ class DocumentService(BaseDocumentService):
         except Exception as e:
             logger.error(f"처리 작업 진행률 조회 실패: {str(e)}")
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    # ========================================
+    # ZIP 파일 관련 메서드
+    # ========================================
+    
+    def upload_zip_document(
+        self,
+        file: UploadFile,
+        user_id: str,
+        is_public: bool = False,
+        permissions: List[str] = None
+    ) -> Dict:
+        """zip 파일 업로드 및 내부 파일 분석"""
+        import zipfile
+        from datetime import datetime
+        from pathlib import Path
+        
+        try:
+            # 확장자 체크
+            if not file.filename.endswith('.zip'):
+                raise HandledException(
+                    ResponseCode.DOCUMENT_INVALID_FILE_TYPE,
+                    msg="zip 파일만 업로드 가능합니다"
+                )
+            
+            # 1. 기존 upload_document로 파일 저장
+            result = self.upload_document(
+                file=file,
+                user_id=user_id,
+                is_public=is_public,
+                permissions=permissions,
+                document_type='zip'
+            )
+            
+            document_id = result['document_id']
+            upload_path = result['upload_path']
+            
+            # 2. zip 파일 분석
+            zip_contents = self._analyze_zip_file(upload_path)
+            
+            # 3. metadata_json 업데이트
+            from shared_core.crud import DocumentCRUD
+            doc_crud = DocumentCRUD(self.db)
+            
+            metadata = {
+                'zip_summary': {
+                    'total_files': len(zip_contents['files']),
+                    'total_directories': sum(1 for f in zip_contents['files'] if f['is_directory']),
+                    'total_size': sum(f['size'] for f in zip_contents['files']),
+                    'total_uncompressed_size': sum(f['uncompressed_size'] for f in zip_contents['files']),
+                    'file_type_stats': zip_contents['file_type_stats']
+                },
+                'files': zip_contents['files']
+            }
+            
+            doc_crud.update_document(document_id, metadata_json=metadata)
+            
+            # 4. 결과 반환
+            result['zip_info'] = {
+                'total_files': metadata['zip_summary']['total_files'],
+                'total_directories': metadata['zip_summary']['total_directories'],
+                'file_types': metadata['zip_summary']['file_type_stats']
+            }
+            
+            return result
+            
+        except HandledException:
+            raise
+        except Exception as e:
+            logger.error(f"zip 파일 업로드 실패: {str(e)}")
+            raise HandledException(ResponseCode.DOCUMENT_UPLOAD_ERROR, e=e)
+    
+    def _analyze_zip_file(self, file_path: str) -> Dict:
+        """zip 파일 분석하여 내부 파일 목록 추출"""
+        import zipfile
+        from collections import defaultdict
+        from datetime import datetime
+        from pathlib import Path
+        
+        files = []
+        file_type_stats = defaultdict(int)
+        
+        try:
+            with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                for info in zip_ref.infolist():
+                    path_obj = Path(info.filename)
+                    extension = path_obj.suffix.lower() if not info.is_dir() else ''
+                    
+                    file_info = {
+                        'path': info.filename,
+                        'name': path_obj.name,
+                        'extension': extension,
+                        'size': info.compress_size,
+                        'uncompressed_size': info.file_size,
+                        'is_directory': info.is_dir(),
+                        'modified_date': datetime(*info.date_time).isoformat() if info.date_time else None
+                    }
+                    
+                    files.append(file_info)
+                    
+                    # 파일 타입 통계
+                    if not info.is_dir():
+                        if extension:
+                            file_type_stats[extension] += 1
+                        else:
+                            file_type_stats['[no extension]'] += 1
+            
+            return {
+                'files': files,
+                'file_type_stats': dict(file_type_stats)
+            }
+            
+        except zipfile.BadZipFile:
+            raise HandledException(
+                ResponseCode.DOCUMENT_INVALID_FILE_TYPE,
+                msg="손상된 zip 파일입니다"
+            )
+        except Exception as e:
+            logger.error(f"zip 파일 분석 실패: {str(e)}")
+            raise
+    
+    def search_in_zip(
+        self,
+        document_id: str,
+        user_id: str,
+        search_term: str = None,
+        extension: str = None,
+        page: int = 1,
+        page_size: int = 100
+    ) -> Dict:
+        """zip 파일 내부 파일 검색"""
+        try:
+            # 1. 문서 조회 및 권한 체크
+            doc_info = self.get_document(document_id, user_id)
+            
+            if doc_info.get('document_type') != 'zip':
+                raise HandledException(
+                    ResponseCode.DOCUMENT_INVALID_FILE_TYPE,
+                    msg="zip 파일이 아닙니다"
+                )
+            
+            # 2. metadata_json에서 파일 목록 가져오기
+            from shared_core.crud import DocumentCRUD
+            doc_crud = DocumentCRUD(self.db)
+            document = doc_crud.get_document(document_id)
+            
+            if not document or not document.metadata_json:
+                return {
+                    'items': [],
+                    'total': 0,
+                    'page': page,
+                    'page_size': page_size
+                }
+            
+            files = document.metadata_json.get('files', [])
+            
+            # 3. 필터링
+            filtered_files = files
+            
+            # 검색어 필터링
+            if search_term:
+                search_lower = search_term.lower()
+                filtered_files = [
+                    f for f in filtered_files
+                    if search_lower in f['path'].lower() or search_lower in f['name'].lower()
+                ]
+            
+            # 확장자 필터링
+            if extension:
+                ext_lower = extension.lower()
+                if not ext_lower.startswith('.'):
+                    ext_lower = '.' + ext_lower
+                filtered_files = [
+                    f for f in filtered_files
+                    if f.get('extension', '').lower() == ext_lower
+                ]
+            
+            # 4. 페이지네이션
+            total = len(filtered_files)
+            start = (page - 1) * page_size
+            end = start + page_size
+            paginated_files = filtered_files[start:end]
+            
+            return {
+                'items': paginated_files,
+                'total': total,
+                'page': page,
+                'page_size': page_size,
+                'total_pages': (total + page_size - 1) // page_size
+            }
+            
+        except HandledException:
+            raise
+        except Exception as e:
+            logger.error(f"zip 내부 파일 검색 실패: {str(e)}")
+            raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    def get_zip_file_content(
+        self,
+        document_id: str,
+        user_id: str,
+        file_path: str
+    ) -> tuple[bytes, str]:
+        """zip 내부 특정 파일 추출"""
+        import zipfile
+        from pathlib import Path
+        
+        try:
+            # 1. 문서 조회 및 권한 체크
+            doc_info = self.get_document(document_id, user_id)
+            
+            if doc_info.get('document_type') != 'zip':
+                raise HandledException(
+                    ResponseCode.DOCUMENT_INVALID_FILE_TYPE,
+                    msg="zip 파일이 아닙니다"
+                )
+            
+            # 2. zip 파일에서 특정 파일 추출
+            zip_file_path = doc_info['file_path']
+            
+            with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+                try:
+                    file_content = zip_ref.read(file_path)
+                    filename = Path(file_path).name
+                    return file_content, filename
+                except KeyError:
+                    raise HandledException(
+                        ResponseCode.DOCUMENT_NOT_FOUND,
+                        msg=f"zip 내부에 '{file_path}' 파일이 존재하지 않습니다"
+                    )
+            
+        except HandledException:
+            raise
+        except Exception as e:
+            logger.error(f"zip 파일 추출 실패: {str(e)}")
+            raise HandledException(ResponseCode.DOCUMENT_DOWNLOAD_ERROR, e=e)

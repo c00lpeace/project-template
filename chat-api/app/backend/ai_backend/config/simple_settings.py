@@ -150,8 +150,9 @@ class Settings(BaseSettings):
     # 허용된 파일 확장자 (쉼표로 구분)
     # - 기본값: 일반적인 문서 및 이미지 형식
     # - 보안: 실행 가능한 파일 제외
+    # - 10/13 zip파일 추가
     upload_allowed_types: str = Field(
-        default="pdf,txt,doc,docx,jpg,jpeg,png,gif,xls,xlsx", 
+        default="pdf,txt,doc,docx,jpg,jpeg,png,gif,xls,xlsx,zip", 
         env="UPLOAD_ALLOWED_TYPES"
     )
     

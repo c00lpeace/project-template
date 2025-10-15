@@ -330,6 +330,10 @@ def create_app():
     async def read_plc_search():
         return FileResponse("plc-search.html")
     
+    @app.get("/zip-upload")
+    async def read_zip_upload():
+        return FileResponse("zip-upload.html")
+    
     # @app.get("/program-mapping")
     @app.get("/pgm-mapping")
     async def read_program_mapping():

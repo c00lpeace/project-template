@@ -680,5 +680,94 @@ def get_processing_progress(
         }
 
 
+# ========================================
+# ZIP 파일 관련 엔드포인트
+# ========================================
+
+@router.post("/upload-zip")
+async def upload_zip_file(
+    file: UploadFile = File(...),
+    user_id: str = Form("user"),
+    is_public: bool = Form(False),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    """zip 파일 업로드 및 내부 파일 분석"""
+    try:
+        result = document_service.upload_zip_document(
+            file=file,
+            user_id=user_id,
+            is_public=is_public
+        )
+        
+        return {
+            "status": "success",
+            "message": "zip 파일이 성공적으로 업로드되었습니다",
+            "data": result
+        }
+    except Exception as e:
+        logger.error(f"zip 파일 업로드 실패: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"업로드 실패: {str(e)}"
+        }
 
 
+@router.get("/zip/{document_id}/contents")
+async def get_zip_contents(
+    document_id: str,
+    user_id: str = Query("user"),
+    search_term: str = Query(None, description="파일명 또는 경로 검색어"),
+    extension: str = Query(None, description="확장자 필터 (e.g., .txt, .pdf)"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(100, ge=1, le=1000),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    """zip 파일 내부 파일 목록 조회 및 검색"""
+    try:
+        result = document_service.search_in_zip(
+            document_id=document_id,
+            user_id=user_id,
+            search_term=search_term,
+            extension=extension,
+            page=page,
+            page_size=page_size
+        )
+        
+        return {
+            "status": "success",
+            "data": result
+        }
+    except Exception as e:
+        logger.error(f"zip 내부 파일 조회 실패: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"조회 실패: {str(e)}"
+        }
+
+
+@router.get("/zip/{document_id}/extract/{file_path:path}")
+async def extract_file_from_zip(
+    document_id: str,
+    file_path: str,
+    user_id: str = Query("user"),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    """zip 내부 특정 파일 추출 및 다운로드"""
+    try:
+        file_content, filename = document_service.get_zip_file_content(
+            document_id=document_id,
+            user_id=user_id,
+            file_path=file_path
+        )
+        
+        return StreamingResponse(
+            io.BytesIO(file_content),
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        logger.error(f"zip 파일 추출 실패: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"추출 실패: {str(e)}"
+        }

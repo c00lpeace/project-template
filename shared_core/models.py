@@ -34,7 +34,8 @@ class Document(Base):
     TYPE_COMMON = 'common'
     TYPE_TYPE1 = 'type1'
     TYPE_TYPE2 = 'type2'
-    VALID_DOCUMENT_TYPES = [TYPE_COMMON, TYPE_TYPE1, TYPE_TYPE2]
+    TYPE_ZIP = 'zip'
+    VALID_DOCUMENT_TYPES = [TYPE_COMMON, TYPE_TYPE1, TYPE_TYPE2, TYPE_ZIP]
     
     # 기본 정보
     document_id = Column('DOCUMENT_ID', String(50), primary_key=True)
