@@ -326,9 +326,14 @@ class DocumentService(BaseDocumentService):
         file: UploadFile,
         user_id: str,
         is_public: bool = False,
-        permissions: List[str] = None
+        permissions: List[str] = None,
+        extract_files: bool = False
     ) -> Dict:
-        """zip 파일 업로드 및 내부 파일 분석"""
+        """zip 파일 업로드 및 내부 파일 분석
+        
+        Args:
+            extract_files: True면 압축 해제해서 저장, False면 압축 파일 그대로 저장
+        """
         import zipfile
         from datetime import datetime
         from pathlib import Path
@@ -353,14 +358,22 @@ class DocumentService(BaseDocumentService):
             document_id = result['document_id']
             upload_path = result['upload_path']
             
-            # 2. zip 파일 분석
-            zip_contents = self._analyze_zip_file(upload_path)
+            # 2. 압축 해제 여부에 따라 분기
+            if extract_files:
+                # 압축 해제 모드
+                extraction_result = self._extract_and_store_zip(upload_path, document_id, user_id)
+                zip_contents = extraction_result['zip_contents']
+            else:
+                # 압축 파일 그대로 모드 (기존)
+                zip_contents = self._analyze_zip_file(upload_path)
             
             # 3. metadata_json 업데이트
             from shared_core.crud import DocumentCRUD
             doc_crud = DocumentCRUD(self.db)
             
             metadata = {
+                'storage_type': 'extracted' if extract_files else 'compressed',
+                'extracted_path': extraction_result.get('extracted_path') if extract_files else None,
                 'zip_summary': {
                     'total_files': len(zip_contents['files']),
                     'total_directories': sum(1 for f in zip_contents['files'] if f['is_directory']),
@@ -387,6 +400,113 @@ class DocumentService(BaseDocumentService):
         except Exception as e:
             logger.error(f"zip 파일 업로드 실패: {str(e)}")
             raise HandledException(ResponseCode.DOCUMENT_UPLOAD_ERROR, e=e)
+    
+    def _extract_and_store_zip(self, zip_path: str, document_id: str, user_id: str) -> Dict:
+        """압축 해제 및 저장 (Phase 1 - 기본 기능)
+        
+        Args:
+            zip_path: 원본 ZIP 파일 경로
+            document_id: 문서 ID
+            user_id: 사용자 ID
+            
+        Returns:
+            {
+                'zip_contents': {...},  # 분석 결과
+                'extracted_path': 'path/to/extracted',
+                'extracted_count': 500,
+                'failed_count': 0
+            }
+        """
+        import zipfile
+        import os
+        from pathlib import Path
+        from datetime import datetime
+        from collections import defaultdict
+        
+        try:
+            # 1. 해제 대상 디렉토리 생성
+            zip_path_obj = Path(zip_path)
+            extracted_base = zip_path_obj.parent / f"{zip_path_obj.stem}_extracted"
+            extracted_base.mkdir(parents=True, exist_ok=True)
+            
+            # 2. ZIP 파일 분석 및 해제
+            files = []
+            file_type_stats = defaultdict(int)
+            extracted_count = 0
+            
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                for info in zip_ref.infolist():
+                    try:
+                        path_obj = Path(info.filename)
+                        extension = path_obj.suffix.lower() if not info.is_dir() else ''
+                        
+                        # 파일 정보 저장
+                        extracted_file_path = extracted_base / info.filename
+                        
+                        file_info = {
+                            'path': info.filename,
+                            'name': path_obj.name,
+                            'extension': extension,
+                            'size': info.compress_size,
+                            'uncompressed_size': info.file_size,
+                            'is_directory': info.is_dir(),
+                            'modified_date': datetime(*info.date_time).isoformat() if info.date_time else None,
+                            'extracted_path': str(extracted_file_path)  # 해제된 파일 경로
+                        }
+                        
+                        files.append(file_info)
+                        
+                        # 파일 타입 통계
+                        if not info.is_dir():
+                            if extension:
+                                file_type_stats[extension] += 1
+                            else:
+                                file_type_stats['[no extension]'] += 1
+                        
+                        # 실제 파일 해제
+                        if not info.is_dir():
+                            # 디렉토리 생성
+                            extracted_file_path.parent.mkdir(parents=True, exist_ok=True)
+                            
+                            # 파일 해제
+                            with zip_ref.open(info.filename) as source:
+                                with open(extracted_file_path, 'wb') as target:
+                                    target.write(source.read())
+                            
+                            extracted_count += 1
+                        else:
+                            # 빈 디렉토리 생성
+                            extracted_file_path.mkdir(parents=True, exist_ok=True)
+                    
+                    except Exception as e:
+                        logger.warning(f"파일 해제 실패: {info.filename}, 오류: {str(e)}")
+                        continue
+            
+            # 3. 원본 ZIP 파일 보관 (백업 및 원본 다운로드용)
+            # 압축 해제 모드에서도 원본 ZIP을 보관하여:
+            # - 사용자가 원본 ZIP을 다운로드할 수 있도록 함 (/documents/{id}/download)
+            # - 백업 및 복구 시 사용
+            logger.info(f"원본 ZIP 파일 보관: {zip_path}")
+            
+            # 4. 결과 반환
+            return {
+                'zip_contents': {
+                    'files': files,
+                    'file_type_stats': dict(file_type_stats)
+                },
+                'extracted_path': str(extracted_base),
+                'extracted_count': extracted_count,
+                'failed_count': len(files) - extracted_count
+            }
+            
+        except zipfile.BadZipFile:
+            raise HandledException(
+                ResponseCode.DOCUMENT_INVALID_FILE_TYPE,
+                msg="손상된 zip 파일입니다"
+            )
+        except Exception as e:
+            logger.error(f"zip 파일 해제 실패: {str(e)}")
+            raise
     
     def _analyze_zip_file(self, file_path: str) -> Dict:
         """zip 파일 분석하여 내부 파일 목록 추출"""
@@ -533,19 +653,50 @@ class DocumentService(BaseDocumentService):
                     msg="zip 파일이 아닙니다"
                 )
             
-            # 2. zip 파일에서 특정 파일 추출
-            zip_file_path = doc_info['file_path']
+            # 2. storage_type 확인
+            from shared_core.crud import DocumentCRUD
+            doc_crud = DocumentCRUD(self.db)
+            document = doc_crud.get_document(document_id)
             
-            with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-                try:
-                    file_content = zip_ref.read(file_path)
-                    filename = Path(file_path).name
-                    return file_content, filename
-                except KeyError:
+            storage_type = 'compressed'
+            if document.metadata_json:
+                storage_type = document.metadata_json.get('storage_type', 'compressed')
+            
+            # 3. storage_type에 따라 분기
+            if storage_type == 'extracted':
+                # 압축 해제된 파일에서 직접 읽기
+                extracted_path = document.metadata_json.get('extracted_path')
+                if not extracted_path:
                     raise HandledException(
                         ResponseCode.DOCUMENT_NOT_FOUND,
-                        msg=f"zip 내부에 '{file_path}' 파일이 존재하지 않습니다"
+                        msg="압축 해제 경로를 찾을 수 없습니다"
                     )
+                
+                extracted_file_path = Path(extracted_path) / file_path
+                if not extracted_file_path.exists():
+                    raise HandledException(
+                        ResponseCode.DOCUMENT_NOT_FOUND,
+                        msg=f"파일이 존재하지 않습니다: {file_path}"
+                    )
+                
+                with open(extracted_file_path, 'rb') as f:
+                    file_content = f.read()
+                filename = Path(file_path).name
+                return file_content, filename
+            else:
+                # 압축 파일에서 추출 (기존 로직)
+                zip_file_path = doc_info['file_path']
+                
+                with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+                    try:
+                        file_content = zip_ref.read(file_path)
+                        filename = Path(file_path).name
+                        return file_content, filename
+                    except KeyError:
+                        raise HandledException(
+                            ResponseCode.DOCUMENT_NOT_FOUND,
+                            msg=f"zip 내부에 '{file_path}' 파일이 존재하지 않습니다"
+                        )
             
         except HandledException:
             raise

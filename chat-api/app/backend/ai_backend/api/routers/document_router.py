@@ -689,14 +689,20 @@ async def upload_zip_file(
     file: UploadFile = File(...),
     user_id: str = Form("user"),
     is_public: bool = Form(False),
+    extract_files: bool = Form(False, description="True면 압축 해제해서 저장"),
     document_service: DocumentService = Depends(get_document_service)
 ):
-    """zip 파일 업로드 및 내부 파일 분석"""
+    """zip 파일 업로드 및 내부 파일 분석
+    
+    Args:
+        extract_files: False(기본) - 압축 파일 그대로 저장, True - 압축 해제해서 저장
+    """
     try:
         result = document_service.upload_zip_document(
             file=file,
             user_id=user_id,
-            is_public=is_public
+            is_public=is_public,
+            extract_files=extract_files
         )
         
         return {

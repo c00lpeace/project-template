@@ -270,6 +270,17 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="extractFiles">
+                        압축 해제해서 저장 (체크 시 ZIP 파일 내부 파일들을 압축 해제하여 저장)
+                    </label>
+                    <p class="info-text">
+                        • 체크 안함(기본): ZIP 파일을 그대로 저장하고 필요 시 동적으로 추출<br>
+                        • 체크함: ZIP 파일을 압축 해제하여 개별 파일로 저장 (빠른 접근, 더 많은 저장 공간 사용)
+                    </p>
+                </div>
+
                 <div class="btn-group">
                     <button class="btn" onclick="uploadZip()">업로드</button>
                 </div>
@@ -363,6 +374,7 @@
             const fileInput = document.getElementById('zipFile');
             const userId = document.getElementById('userId').value;
             const isPublic = document.getElementById('isPublic').checked;
+            const extractFiles = document.getElementById('extractFiles').checked;
 
             if (!fileInput.files[0]) {
                 alert('ZIP 파일을 선택해주세요');
@@ -373,6 +385,7 @@
             formData.append('file', fileInput.files[0]);
             formData.append('user_id', userId);
             formData.append('is_public', isPublic);
+            formData.append('extract_files', extractFiles);
 
             try {
                 const response = await fetch(`${API_BASE_URL}/upload-zip`, {
