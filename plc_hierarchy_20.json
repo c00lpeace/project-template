@@ -1,0 +1,294 @@
+{
+  "plants": [
+    {
+      "plant": "PLT1",
+      "processes": [
+        {
+          "process": "PLT1-PRC1",
+          "lines": [
+            {
+              "line": "PLT1-PRC1-LN1",
+              "equipment_groups": [
+                {
+                  "equipment_group": "PLT1-PRC1-LN1-EQ1",
+                  "units": [
+                    {
+                      "unit": "PLT1-PRC1-LN1-EQ1-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT1-PRC1-LN1-EQ1-U1-PLC01"
+                        }
+                      ]
+                    },
+                    {
+                      "unit": "PLT1-PRC1-LN1-EQ1-U2",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT1-PRC1-LN1-EQ1-U2-PLC02"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "equipment_group": "PLT1-PRC1-LN1-EQ2",
+                  "units": [
+                    {
+                      "unit": "PLT1-PRC1-LN1-EQ2-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT1-PRC1-LN1-EQ2-U1-PLC03"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "line": "PLT1-PRC1-LN2",
+              "equipment_groups": [
+                {
+                  "equipment_group": "PLT1-PRC1-LN2-EQ1",
+                  "units": [
+                    {
+                      "unit": "PLT1-PRC1-LN2-EQ1-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT1-PRC1-LN2-EQ1-U1-PLC04"
+                        }
+                      ]
+                    },
+                    {
+                      "unit": "PLT1-PRC1-LN2-EQ1-U2",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT1-PRC1-LN2-EQ1-U2-PLC05"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "process": "PLT1-PRC2",
+          "lines": [
+            {
+              "line": "PLT1-PRC2-LN1",
+              "equipment_groups": [
+                {
+                  "equipment_group": "PLT1-PRC2-LN1-EQ1",
+                  "units": [
+                    {
+                      "unit": "PLT1-PRC2-LN1-EQ1-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT1-PRC2-LN1-EQ1-U1-PLC06"
+                        }
+                      ]
+                    },
+                    {
+                      "unit": "PLT1-PRC2-LN1-EQ1-U2",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT1-PRC2-LN1-EQ1-U2-PLC07"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "line": "PLT1-PRC2-LN2",
+              "equipment_groups": [
+                {
+                  "equipment_group": "PLT1-PRC2-LN2-EQ1",
+                  "units": [
+                    {
+                      "unit": "PLT1-PRC2-LN2-EQ1-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT1-PRC2-LN2-EQ1-U1-PLC08"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "plant": "PLT2",
+      "processes": [
+        {
+          "process": "PLT2-PRC1",
+          "lines": [
+            {
+              "line": "PLT2-PRC1-LN1",
+              "equipment_groups": [
+                {
+                  "equipment_group": "PLT2-PRC1-LN1-EQ1",
+                  "units": [
+                    {
+                      "unit": "PLT2-PRC1-LN1-EQ1-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC1-LN1-EQ1-U1-PLC09"
+                        }
+                      ]
+                    },
+                    {
+                      "unit": "PLT2-PRC1-LN1-EQ1-U2",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC1-LN1-EQ1-U2-PLC10"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "equipment_group": "PLT2-PRC1-LN1-EQ2",
+                  "units": [
+                    {
+                      "unit": "PLT2-PRC1-LN1-EQ2-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC1-LN1-EQ2-U1-PLC11"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "line": "PLT2-PRC1-LN2",
+              "equipment_groups": [
+                {
+                  "equipment_group": "PLT2-PRC1-LN2-EQ1",
+                  "units": [
+                    {
+                      "unit": "PLT2-PRC1-LN2-EQ1-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC1-LN2-EQ1-U1-PLC12"
+                        }
+                      ]
+                    },
+                    {
+                      "unit": "PLT2-PRC1-LN2-EQ1-U2",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC1-LN2-EQ1-U2-PLC13"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "process": "PLT2-PRC2",
+          "lines": [
+            {
+              "line": "PLT2-PRC2-LN1",
+              "equipment_groups": [
+                {
+                  "equipment_group": "PLT2-PRC2-LN1-EQ1",
+                  "units": [
+                    {
+                      "unit": "PLT2-PRC2-LN1-EQ1-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC2-LN1-EQ1-U1-PLC14"
+                        }
+                      ]
+                    },
+                    {
+                      "unit": "PLT2-PRC2-LN1-EQ1-U2",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC2-LN1-EQ1-U2-PLC15"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "equipment_group": "PLT2-PRC2-LN1-EQ2",
+                  "units": [
+                    {
+                      "unit": "PLT2-PRC2-LN1-EQ2-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC2-LN1-EQ2-U1-PLC16"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "line": "PLT2-PRC2-LN2",
+              "equipment_groups": [
+                {
+                  "equipment_group": "PLT2-PRC2-LN2-EQ1",
+                  "units": [
+                    {
+                      "unit": "PLT2-PRC2-LN2-EQ1-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC2-LN2-EQ1-U1-PLC17"
+                        }
+                      ]
+                    },
+                    {
+                      "unit": "PLT2-PRC2-LN2-EQ1-U2",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC2-LN2-EQ1-U2-PLC18"
+                        }
+                      ]
+                    },
+                    {
+                      "unit": "PLT2-PRC2-LN2-EQ1-U3",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC2-LN2-EQ1-U3-PLC19"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "equipment_group": "PLT2-PRC2-LN2-EQ2",
+                  "units": [
+                    {
+                      "unit": "PLT2-PRC2-LN2-EQ2-U1",
+                      "plcs": [
+                        {
+                          "plc_id": "PLT2-PRC2-LN2-EQ2-U1-PLC20"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
