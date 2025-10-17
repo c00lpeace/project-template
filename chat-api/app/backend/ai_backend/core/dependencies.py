@@ -9,6 +9,8 @@ from ai_backend.api.services.document_service import DocumentService
 from ai_backend.api.services.user_service import UserService
 from ai_backend.api.services.group_service import GroupService
 from ai_backend.api.services.plc_service import PlcService
+from ai_backend.api.services.program_service import ProgramService
+from ai_backend.api.services.pgm_history_service import PgmHistoryService
 from ai_backend.database.base import Database
 from ai_backend.config import settings
 from ai_backend.cache.redis_client import get_redis_client
@@ -122,3 +124,17 @@ def get_plc_service(
 ) -> PlcService:
     """PLC 관리 서비스 의존성 주입"""
     return PlcService(db=db)
+
+
+def get_program_service(
+    db: Session = Depends(get_db)
+) -> ProgramService:
+    """프로그램 관리 서비스 의존성 주입"""
+    return ProgramService(db=db)
+
+
+def get_pgm_history_service(
+    db: Session = Depends(get_db)
+) -> PgmHistoryService:
+    """PGM 매핑 이력 서비스 의존성 주입"""
+    return PgmHistoryService(db=db)

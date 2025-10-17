@@ -227,3 +227,109 @@ class PlcService:
             raise
         except Exception as e:
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    # ========== ✨ 프로그램 매핑 관련 메서드 ==========
+    
+    def map_program_to_plc(
+        self,
+        plc_id: str,
+        pgm_id: str,
+        user: str,
+        notes: Optional[str] = None
+    ):
+        """PLC에 프로그램 매핑"""
+        try:
+            plc = self.plc_crud.map_program(
+                plc_id=plc_id,
+                pgm_id=pgm_id,
+                user=user,
+                notes=notes
+            )
+            return plc
+        except HandledException:
+            raise
+        except Exception as e:
+            raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    def unmap_program_from_plc(
+        self,
+        plc_id: str,
+        user: str,
+        notes: Optional[str] = None
+    ):
+        """PLC의 프로그램 매핑 해제"""
+        try:
+            plc = self.plc_crud.unmap_program(
+                plc_id=plc_id,
+                user=user,
+                notes=notes
+            )
+            return plc
+        except HandledException:
+            raise
+        except Exception as e:
+            raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    def get_plc_mapping_history(
+        self,
+        plc_id: str,
+        skip: int = 0,
+        limit: int = 50
+    ):
+        """PLC의 프로그램 매핑 변경 이력 조회"""
+        try:
+            histories, total = self.plc_crud.get_mapping_history(
+                plc_id=plc_id,
+                skip=skip,
+                limit=limit
+            )
+            return histories, total
+        except HandledException:
+            raise
+        except Exception as e:
+            raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    def get_plcs_by_program(
+        self,
+        pgm_id: str,
+        skip: int = 0,
+        limit: int = 100
+    ):
+        """특정 프로그램에 매핑된 PLC 목록 조회"""
+        try:
+            plcs, total = self.plc_crud.get_plcs_by_program(
+                pgm_id=pgm_id,
+                skip=skip,
+                limit=limit
+            )
+            return plcs, total
+        except HandledException:
+            raise
+        except Exception as e:
+            raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    def get_unmapped_plcs(
+        self,
+        skip: int = 0,
+        limit: int = 100
+    ):
+        """프로그램이 매핑되지 않은 PLC 목록 조회"""
+        try:
+            plcs, total = self.plc_crud.get_unmapped_plcs(
+                skip=skip,
+                limit=limit
+            )
+            return plcs, total
+        except HandledException:
+            raise
+        except Exception as e:
+            raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    def count_plcs_by_program(self, pgm_id: str) -> int:
+        """특정 프로그램에 매핑된 PLC 개수"""
+        try:
+            return self.plc_crud.count_plcs_by_program(pgm_id)
+        except HandledException:
+            raise
+        except Exception as e:
+            raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)

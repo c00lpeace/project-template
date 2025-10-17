@@ -306,6 +306,14 @@ def create_app():
     from ai_backend.api.routers.plc_router import router as plc_router
     app.include_router(plc_router, prefix=api_prefix)
     
+    # Program 라우터 추가 (프로그램 관리)
+    from ai_backend.api.routers.program_router import router as program_router
+    app.include_router(program_router, prefix=api_prefix)
+    
+    # PGM History 라우터 추가 (매핑 이력)
+    from ai_backend.api.routers.pgm_history_router import router as pgm_history_router
+    app.include_router(pgm_history_router, prefix=api_prefix)
+    
     # CORS 설정 - 설정 파일에서 가져오기
     origins = settings.get_cors_origins()
     
@@ -326,15 +334,15 @@ def create_app():
     async def read_chat():
         return FileResponse("llm_chat_client.html")
     
-    @app.get("/plc-search")
+    @app.get("/plc-search") # PLC 검색 테스트 페이지)
     async def read_plc_search():
         return FileResponse("plc-search.html")
     
-    @app.get("/zip-upload")
+    @app.get("/zip-upload") # ZIP 업로드 테스트 페이지
     async def read_zip_upload():
         return FileResponse("zip-upload.html")
     
-    # @app.get("/program-mapping")
+    # @app.get("/program-mapping") # 프로그램-PLC 매핑 테스트 페이지
     @app.get("/pgm-mapping")
     async def read_program_mapping():
         return FileResponse("pgm-mapping.html")

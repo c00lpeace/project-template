@@ -81,3 +81,32 @@ class PlcHierarchyRequest(BaseModel):
         if v not in valid_levels:
             raise ValueError(f'level은 {valid_levels} 중 하나여야 합니다.')
         return v
+
+
+# ========== ✨ 프로그램 매핑 관련 Request ==========
+
+class MapProgramRequest(BaseModel):
+    """프로그램 매핑 요청"""
+    pgm_id: str = Field(..., min_length=1, max_length=50, description="프로그램 ID")
+    user: str = Field(..., min_length=1, max_length=50, description="작업자")
+    notes: Optional[str] = Field(None, max_length=500, description="비고")
+    
+    @field_validator('pgm_id', 'user')
+    @classmethod
+    def validate_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError('필드는 공백일 수 없습니다.')
+        return v.strip()
+
+
+class UnmapProgramRequest(BaseModel):
+    """프로그램 매핑 해제 요청"""
+    user: str = Field(..., min_length=1, max_length=50, description="작업자")
+    notes: Optional[str] = Field(None, max_length=500, description="비고")
+    
+    @field_validator('user')
+    @classmethod
+    def validate_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError('필드는 공백일 수 없습니다.')
+        return v.strip()

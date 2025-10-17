@@ -8,6 +8,7 @@ from datetime import datetime
 __all__ = [
     "ProgramResponse",
     "ProgramListResponse",
+    "ProgramDeleteResponse",
     "PgmMappingResponse",
     "PgmMappingDetailResponse",
     "PgmMappingListResponse",
@@ -38,6 +39,12 @@ class ProgramListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class ProgramDeleteResponse(BaseModel):
+    """프로그램 삭제 응답"""
+    pgm_id: str
+    message: str
 
 
 class PgmMappingResponse(BaseModel):

@@ -1,11 +1,12 @@
 # _*_ coding: utf-8 _*_
-"""PLC CRUD operations with database."""
+"""PLC CRUD operations with database - 프로그램 매핑 메서드 추가"""
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from datetime import datetime
 from ai_backend.database.models.plc_models import PLCMaster
+from ai_backend.database.models.mapping_models import PgmMappingHistory, MappingAction
 from ai_backend.types.response.exceptions import HandledException
 from ai_backend.types.response.response_code import ResponseCode
 import logging
@@ -18,6 +19,8 @@ class PLCCrud:
     
     def __init__(self, db: Session):
         self.db = db
+    
+    # ========== 기존 PLC CRUD 메서드들 (변경 없음) ==========
     
     def create_plc(
         self,
@@ -281,4 +284,212 @@ class PLCCrud:
                 return []
         except Exception as e:
             logger.error(f"고유 값 조회 실패: {str(e)}")
+            raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
+    
+    # ========== ✨ 새로 추가된 프로그램 매핑 메서드들 ==========
+    
+    def map_program(
+        self,
+        plc_id: str,
+        pgm_id: str,
+        user: str,
+        notes: Optional[str] = None
+    ) -> PLCMaster:
+        """
+        PLC에 프로그램 매핑
+        - PLC_MASTER의 pgm_id 업데이트 (현재 상태)
+        - PGM_MAPPING_HISTORY에 이력 기록
+        """
+        try:
+            plc = self.get_plc(plc_id)
+            if not plc:
+                raise HandledException(
+                    ResponseCode.USER_NOT_FOUND, 
+                    msg=f"PLC '{plc_id}'를 찾을 수 없습니다."
+                )
+            
+            # 이전 매핑 정보 백업
+            prev_pgm_id = plc.pgm_id
+            action = MappingAction.CREATE if not prev_pgm_id else MappingAction.UPDATE
+            
+            # 1. PLC_MASTER 업데이트 (현재 상태)
+            plc.pgm_id = pgm_id
+            plc.pgm_mapping_dt = datetime.now()
+            plc.pgm_mapping_user = user
+            plc.update_dt = datetime.now()
+            
+            # 2. PGM_MAPPING_HISTORY에 이력 추가
+            history = PgmMappingHistory(
+                plc_id=plc_id,
+                pgm_id=pgm_id,
+                action=action.value,
+                action_dt=datetime.now(),
+                action_user=user,
+                prev_pgm_id=prev_pgm_id,
+                notes=notes
+            )
+            self.db.add(history)
+            
+            self.db.commit()
+            self.db.refresh(plc)
+            
+            logger.info(f"프로그램 매핑 성공: PLC={plc_id}, PGM={pgm_id}, Action={action.value}")
+            return plc
+            
+        except HandledException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"프로그램 매핑 실패: {str(e)}")
+            raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
+    
+    def unmap_program(
+        self,
+        plc_id: str,
+        user: str,
+        notes: Optional[str] = None
+    ) -> PLCMaster:
+        """
+        PLC의 프로그램 매핑 해제
+        - PLC_MASTER의 pgm_id를 NULL로 설정
+        - PGM_MAPPING_HISTORY에 DELETE 이력 기록
+        """
+        try:
+            plc = self.get_plc(plc_id)
+            if not plc:
+                raise HandledException(
+                    ResponseCode.USER_NOT_FOUND,
+                    msg=f"PLC '{plc_id}'를 찾을 수 없습니다."
+                )
+            
+            if not plc.pgm_id:
+                raise HandledException(
+                    ResponseCode.INVALID_REQUEST,
+                    msg="매핑된 프로그램이 없습니다."
+                )
+            
+            prev_pgm_id = plc.pgm_id
+            
+            # 1. PLC_MASTER 업데이트
+            plc.pgm_id = None
+            plc.pgm_mapping_dt = datetime.now()
+            plc.pgm_mapping_user = user
+            plc.update_dt = datetime.now()
+            
+            # 2. PGM_MAPPING_HISTORY에 이력 추가
+            history = PgmMappingHistory(
+                plc_id=plc_id,
+                pgm_id=None,
+                action=MappingAction.DELETE.value,
+                action_dt=datetime.now(),
+                action_user=user,
+                prev_pgm_id=prev_pgm_id,
+                notes=notes
+            )
+            self.db.add(history)
+            
+            self.db.commit()
+            self.db.refresh(plc)
+            
+            logger.info(f"프로그램 매핑 해제 성공: PLC={plc_id}, Prev PGM={prev_pgm_id}")
+            return plc
+            
+        except HandledException:
+            raise
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"프로그램 매핑 해제 실패: {str(e)}")
+            raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
+    
+    def get_mapping_history(
+        self,
+        plc_id: str,
+        skip: int = 0,
+        limit: int = 50
+    ) -> Tuple[List[PgmMappingHistory], int]:
+        """
+        PLC의 프로그램 매핑 변경 이력 조회
+        Returns: (이력 목록, 전체 개수)
+        """
+        try:
+            query = self.db.query(PgmMappingHistory).filter(
+                PgmMappingHistory.plc_id == plc_id
+            )
+            
+            total = query.count()
+            
+            histories = query.order_by(
+                PgmMappingHistory.action_dt.desc()
+            ).offset(skip).limit(limit).all()
+            
+            return histories, total
+            
+        except Exception as e:
+            logger.error(f"매핑 이력 조회 실패: {str(e)}")
+            raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
+    
+    def get_plcs_by_program(
+        self,
+        pgm_id: str,
+        skip: int = 0,
+        limit: int = 100
+    ) -> Tuple[List[PLCMaster], int]:
+        """
+        특정 프로그램에 매핑된 PLC 목록 조회
+        Returns: (PLC 목록, 전체 개수)
+        """
+        try:
+            query = self.db.query(PLCMaster).filter(
+                and_(
+                    PLCMaster.pgm_id == pgm_id,
+                    PLCMaster.is_active == True
+                )
+            )
+            
+            total = query.count()
+            plcs = query.offset(skip).limit(limit).all()
+            
+            return plcs, total
+            
+        except Exception as e:
+            logger.error(f"프로그램별 PLC 조회 실패: {str(e)}")
+            raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
+    
+    def count_plcs_by_program(self, pgm_id: str) -> int:
+        """특정 프로그램에 매핑된 PLC 개수"""
+        try:
+            return self.db.query(PLCMaster).filter(
+                and_(
+                    PLCMaster.pgm_id == pgm_id,
+                    PLCMaster.is_active == True
+                )
+            ).count()
+        except Exception as e:
+            logger.error(f"프로그램별 PLC 개수 조회 실패: {str(e)}")
+            raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
+    
+    def get_unmapped_plcs(
+        self,
+        skip: int = 0,
+        limit: int = 100
+    ) -> Tuple[List[PLCMaster], int]:
+        """
+        프로그램이 매핑되지 않은 PLC 목록 조회
+        Returns: (PLC 목록, 전체 개수)
+        """
+        try:
+            query = self.db.query(PLCMaster).filter(
+                and_(
+                    PLCMaster.pgm_id.is_(None),
+                    PLCMaster.is_active == True
+                )
+            )
+            
+            total = query.count()
+            plcs = query.offset(skip).limit(limit).all()
+            
+            return plcs, total
+            
+        except Exception as e:
+            logger.error(f"미매핑 PLC 조회 실패: {str(e)}")
             raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
