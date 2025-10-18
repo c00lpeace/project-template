@@ -13,6 +13,7 @@ class CreatePlcRequest(BaseModel):
     equipment_group: str = Field(..., min_length=1, max_length=100, description="장비그룹")
     unit: str = Field(..., min_length=1, max_length=100, description="호기")
     plc_name: str = Field(..., min_length=1, max_length=200, description="PLC 명칭")
+    create_user: Optional[str] = Field(None, max_length=50, description="생성자")
     
     @field_validator('plc_id', 'plant', 'process', 'line', 'equipment_group', 'unit', 'plc_name')
     @classmethod
@@ -30,6 +31,7 @@ class UpdatePlcRequest(BaseModel):
     equipment_group: Optional[str] = Field(None, min_length=1, max_length=100, description="장비그룹")
     unit: Optional[str] = Field(None, min_length=1, max_length=100, description="호기")
     plc_name: Optional[str] = Field(None, min_length=1, max_length=200, description="PLC 명칭")
+    update_user: Optional[str] = Field(None, max_length=50, description="수정자")
     
     @field_validator('plant', 'process', 'line', 'equipment_group', 'unit', 'plc_name')
     @classmethod

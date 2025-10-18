@@ -1,0 +1,106 @@
+-- PLC_MASTER 테이블 데이터 삽입
+INSERT INTO "PLC_MASTER" 
+    ("PLC_ID", "PLANT", "PROCESS", "LINE", "EQUIPMENT_GROUP", "UNIT", "PLC_NAME", "IS_ACTIVE", "CREATE_DT") 
+values	
+    ('M1CFB06000', 'KY1', '자동화', 'SN1242', 'CFB', '1', '01_01_CELL_FABRICATOR', TRUE, NOW()),
+    ('M1CFB07000', 'KY1', '모듈', 'SN1242', 'CFB', '2', '01_02_CELL_FABRICATOR', TRUE, NOW()),
+	('M1CFB08000', 'KY1', '자동화', 'SN1242', 'CFB', '3', '01_03_CELL_FABRICATOR', TRUE, NOW()),
+    ('M1CFB09000', 'KY1', '자동화', 'SN1242', 'CFB', '4', '01_04_CELL_FABRICATOR', TRUE, NOW()),
+    ('M1CFB10000', 'KY1', '모듈', 'SN1242', 'CFB', '5', '01_05_CELL_FABRICATOR', TRUE, NOW()),
+    ('M1MFA04000', 'KY1', '자동화', 'SN1242', 'MAS', '1', '01_01_MODULE_FRONT_ASSEMBLER', TRUE, NOW()),
+    ('M1MFA05000', 'KY1', '자동화', 'SN1242', 'MAS', '2', '01_02_MODULE_FRONT_ASSEMBLER', TRUE, NOW()),
+    ('M1MFA06000', 'KY1', '자동화', 'SN1242', 'MAS', '3', '01_03_MODULE_FRONT_ASSEMBLER', TRUE, NOW()),
+    ('M1MRA04000', 'KY1', '모듈', 'SN1242', 'MAS', '1', '01_01_MODULE_REAR_ASSEMBLER', TRUE, NOW()),
+    ('M1MRA05000', 'KY1', '모듈', 'SN1242', 'MAS', '2', '01_02_MODULE_REAR_ASSEMBLER', TRUE, NOW()),
+    ('M1MRA06000', 'KY1', '모듈', 'SN1242', 'MAS', '3', '01_03_MODULE_REAR_ASSEMBLER', TRUE, NOW()),
+    ('M1MRC04000', 'KY1', '모듈', 'SN1242', 'FRC', '1', '', TRUE, NOW()),
+    ('M1MRC05000', 'KY1', '모듈', 'SN1242', 'FRC', '2', '', TRUE, NOW()),
+    ('M1MRC06000', 'KY1', '모듈', 'SN1242', 'FRC', '3', '', TRUE, NOW());
+    
+select * from "PLC_MASTER";
+select * from "PLC_MASTER";
+INSERT INTO "PLC_MASTER" 
+    ("PLANT", "PROCESS", "LINE", "EQUIPMENT_GROUP", "UNIT", "PLC_ID", "PLC_NAME", "IS_ACTIVE", "CREATE_USER", "CREATE_DT")
+    values
+    ('PLT1', 'PLT1-PRC1', 'PLT1-PRC1-LN1', 'PLT1-PRC1-LN1-EQ1', 'PLT1-PRC1-LN1-EQ1-U1', 'PLT1-PRC1-LN1-EQ1-U1-PLC01', '테스트1', true , 'tester', NOW()),
+    ('PLT1', 'PLT1-PRC1', 'PLT1-PRC1-LN1', 'PLT1-PRC1-LN1-EQ1', 'PLT1-PRC1-LN1-EQ1-U2', 'PLT1-PRC1-LN1-EQ1-U2-PLC02', '테스트2', true , 'tester', NOW()),
+    
+    ('PLT1', 'PLT1-PRC1', 'PLT1-PRC1-LN1', 'PLT1-PRC1-LN1-EQ2', 'PLT1-PRC1-LN1-EQ2-U1', 'PLT1-PRC1-LN1-EQ2-U1-PLC03', '테스트3', true , 'tester', NOW()),
+    ('PLT1', 'PLT1-PRC1', 'PLT1-PRC1-LN1', 'PLT1-PRC1-LN1-EQ2', 'PLT1-PRC1-LN1-EQ2-U2', 'PLT1-PRC1-LN1-EQ2-U2-PLC04', '테스트4', true , 'tester', NOW()),
+    
+    ('PLT1', 'PLT1-PRC1', 'PLT1-PRC1-LN2', 'PLT1-PRC1-LN2-EQ1', 'PLT1-PRC1-LN2-EQ1-U1', 'PLT1-PRC1-LN2-EQ1-U1-PLC05', '테스트5', true , 'tester', NOW()),
+	('PLT1', 'PLT1-PRC1', 'PLT1-PRC1-LN2', 'PLT1-PRC1-LN2-EQ1', 'PLT1-PRC1-LN2-EQ1-U2', 'PLT1-PRC1-LN2-EQ1-U2-PLC06', '테스트6', true , 'tester', NOW()),
+	
+	('PLT1', 'PLT1-PRC1', 'PLT1-PRC1-LN2', 'PLT1-PRC1-LN2-EQ2', 'PLT1-PRC1-LN2-EQ2-U1', 'PLT1-PRC1-LN2-EQ2-U1-PLC07', '테스트7', true , 'tester', NOW()),
+	('PLT1', 'PLT1-PRC1', 'PLT1-PRC1-LN2', 'PLT1-PRC1-LN2-EQ2', 'PLT1-PRC1-LN2-EQ2-U2', 'PLT1-PRC1-LN2-EQ2-U2-PLC08', '테스트8', true , 'tester', NOW()),
+	
+	
+	('PLT1', 'PLT1-PRC2', 'PLT1-PRC2-LN1', 'PLT1-PRC2-LN1-EQ1', 'PLT1-PRC2-LN1-EQ1-U1', 'PLT1-PRC2-LN1-EQ1-U1-PLC09', '테스트9', true , 'tester', NOW()),
+    ('PLT1', 'PLT1-PRC2', 'PLT1-PRC2-LN1', 'PLT1-PRC2-LN1-EQ1', 'PLT1-PRC2-LN1-EQ1-U2', 'PLT1-PRC2-LN1-EQ1-U2-PLC10', '테스트10', true , 'tester', NOW()),
+    
+    ('PLT1', 'PLT1-PRC2', 'PLT1-PRC2-LN1', 'PLT1-PRC2-LN1-EQ2', 'PLT1-PRC2-LN1-EQ2-U1', 'PLT1-PRC2-LN1-EQ2-U1-PLC11', '테스트11', true , 'tester', NOW()),
+    ('PLT1', 'PLT1-PRC2', 'PLT1-PRC2-LN1', 'PLT1-PRC2-LN1-EQ2', 'PLT1-PRC2-LN1-EQ2-U2', 'PLT1-PRC2-LN1-EQ2-U2-PLC12', '테스트12', true , 'tester', NOW()),
+    
+    ('PLT1', 'PLT1-PRC2', 'PLT1-PRC2-LN2', 'PLT1-PRC2-LN2-EQ1', 'PLT1-PRC2-LN2-EQ1-U1', 'PLT1-PRC2-LN2-EQ1-U1-PLC13', '테스트13', true , 'tester', NOW()),
+	('PLT1', 'PLT1-PRC2', 'PLT1-PRC2-LN2', 'PLT1-PRC2-LN2-EQ1', 'PLT1-PRC2-LN2-EQ1-U2', 'PLT1-PRC2-LN2-EQ1-U2-PLC14', '테스트14', true , 'tester', NOW()),
+	
+	('PLT1', 'PLT1-PRC2', 'PLT1-PRC2-LN2', 'PLT1-PRC2-LN2-EQ2', 'PLT1-PRC2-LN2-EQ2-U1', 'PLT1-PRC2-LN2-EQ2-U1-PLC15', '테스트15', true , 'tester', NOW()),
+	('PLT1', 'PLT1-PRC2', 'PLT1-PRC2-LN2', 'PLT1-PRC2-LN2-EQ2', 'PLT1-PRC2-LN2-EQ2-U2', 'PLT1-PRC2-LN2-EQ2-U2-PLC16', '테스트16', true , 'tester', NOW()),
+	
+	
+	
+	('PLT2', 'PLT2-PRC1', 'PLT2-PRC1-LN1', 'PLT2-PRC1-LN1-EQ1', 'PLT2-PRC1-LN1-EQ1-U1', 'PLT2-PRC1-LN1-EQ1-U1-PLC17', '테스트17', true , 'tester', NOW()),
+    ('PLT2', 'PLT2-PRC1', 'PLT2-PRC1-LN1', 'PLT2-PRC1-LN1-EQ1', 'PLT2-PRC1-LN1-EQ1-U2', 'PLT2-PRC1-LN1-EQ1-U2-PLC18', '테스트18', true , 'tester', NOW()),
+    
+    ('PLT2', 'PLT2-PRC1', 'PLT2-PRC1-LN1', 'PLT2-PRC1-LN1-EQ2', 'PLT2-PRC1-LN1-EQ2-U1', 'PLT2-PRC1-LN1-EQ2-U1-PLC19', '테스트19', true , 'tester', NOW()),
+    ('PLT2', 'PLT2-PRC1', 'PLT2-PRC1-LN1', 'PLT2-PRC1-LN1-EQ2', 'PLT2-PRC1-LN1-EQ2-U2', 'PLT2-PRC1-LN1-EQ2-U2-PLC20', '테스트20', true , 'tester', NOW()),
+    
+    ('PLT2', 'PLT2-PRC1', 'PLT2-PRC1-LN2', 'PLT2-PRC1-LN2-EQ1', 'PLT2-PRC1-LN2-EQ1-U1', 'PLT2-PRC1-LN2-EQ1-U1-PLC21', '테스트21', true , 'tester', NOW()),
+	('PLT2', 'PLT2-PRC1', 'PLT2-PRC1-LN2', 'PLT2-PRC1-LN2-EQ1', 'PLT2-PRC1-LN2-EQ1-U2', 'PLT2-PRC1-LN2-EQ1-U2-PLC22', '테스트22', true , 'tester', NOW()),
+	
+	('PLT2', 'PLT2-PRC1', 'PLT2-PRC1-LN2', 'PLT2-PRC1-LN2-EQ2', 'PLT2-PRC1-LN2-EQ2-U1', 'PLT2-PRC1-LN2-EQ2-U1-PLC23', '테스트23', true , 'tester', NOW()),
+	('PLT2', 'PLT2-PRC1', 'PLT2-PRC1-LN2', 'PLT2-PRC1-LN2-EQ2', 'PLT2-PRC1-LN2-EQ2-U2', 'PLT2-PRC1-LN2-EQ2-U2-PLC24', '테스트24', true , 'tester', NOW()),
+	
+	
+	('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN1', 'PLT2-PRC2-LN1-EQ1', 'PLT2-PRC2-LN1-EQ1-U1', 'PLT2-PRC2-LN1-EQ1-U1-PLC25', '테스트25', true , 'tester', NOW()),
+    ('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN1', 'PLT2-PRC2-LN1-EQ1', 'PLT2-PRC2-LN1-EQ1-U2', 'PLT2-PRC2-LN1-EQ1-U2-PLC26', '테스트26', true , 'tester', NOW()),
+    
+    ('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN1', 'PLT2-PRC2-LN1-EQ2', 'PLT2-PRC2-LN1-EQ2-U1', 'PLT2-PRC2-LN1-EQ2-U1-PLC27', '테스트27', true , 'tester', NOW()),
+    ('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN1', 'PLT2-PRC2-LN1-EQ2', 'PLT2-PRC2-LN1-EQ2-U2', 'PLT2-PRC2-LN1-EQ2-U2-PLC28', '테스트28', true , 'tester', NOW()),
+    
+    ('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN2', 'PLT2-PRC2-LN2-EQ1', 'PLT2-PRC2-LN2-EQ1-U1', 'PLT2-PRC2-LN2-EQ1-U1-PLC29', '테스트29', true , 'tester', NOW()),
+	('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN2', 'PLT2-PRC2-LN2-EQ1', 'PLT2-PRC2-LN2-EQ1-U2', 'PLT2-PRC2-LN2-EQ1-U2-PLC30', '테스트30', true , 'tester', NOW()),
+	
+	('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN2', 'PLT2-PRC2-LN2-EQ2', 'PLT2-PRC2-LN2-EQ2-U1', 'PLT2-PRC2-LN2-EQ2-U1-PLC31', '테스트31', true , 'tester', NOW()),
+	('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN2', 'PLT2-PRC2-LN2-EQ2', 'PLT2-PRC2-LN2-EQ2-U2', 'PLT2-PRC2-LN2-EQ2-U2-PLC32', '테스트32', true , 'tester', NOW());
+	
+--PROGRAMS 테이블 데이터 삽입
+select * from "PROGRAMS";
+insert into	"PROGRAMS" 
+	()
+
+
+    
+    
+
+-- 삽입된 데이터 확인
+SELECT * FROM "PLC_MASTER" WHERE "PLANT" = 'KY1' ORDER BY "PLC_ID";
+SELECT * FROM "PLC_MASTER" as pm
+	WHERE pm."IS_ACTIVE" = false;
+SELECT * FROM "PLC_MASTER" as pm
+	WHERE 
+		pm."PLANT" = 'KY1' and
+		pm."PROCESS" = '모듈' and
+		pm."LINE" = 'SN1242' and
+		pm."EQUIPMENT_GROUP" = 'CFB'
+	ORDER BY "PLC_ID";
+
+
+-- 개수 확인
+SELECT COUNT(*) FROM "PLC_MASTER" WHERE "IS_ACTIVE" = false;
+
+--모든 데이터 확인
+select * from "PLC_MASTER" pm
+order by "PLC_ID"; 
+
+

@@ -25,4 +25,6 @@ class PLCMaster(Base):
     
     is_active = Column('IS_ACTIVE', Boolean, nullable=False, server_default=true())  # 활성 상태 (삭제 = FALSE)
     create_dt = Column('CREATE_DT', DateTime, nullable=False, server_default=func.now())  # 생성일시
+    create_user = Column('CREATE_USER', String(50), nullable=True)  # 생성자
     update_dt = Column('UPDATE_DT', DateTime, nullable=True)  # 수정일시
+    update_user = Column('UPDATE_USER', String(50), nullable=True)  # 수정자

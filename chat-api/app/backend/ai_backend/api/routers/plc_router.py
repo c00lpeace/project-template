@@ -50,7 +50,8 @@ def create_plc(
         line=request.line,
         equipment_group=request.equipment_group,
         unit=request.unit,
-        plc_name=request.plc_name
+        plc_name=request.plc_name,
+        create_user=request.create_user
     )
     
     return PlcCreateResponse(
@@ -64,7 +65,7 @@ def create_plc(
     )
 
 
-@router.get("/plcs/{plc_id}", response_model=PlcResponse)
+@router.get("/plc/{plc_id}", response_model=PlcResponse)
 def get_plc(
     plc_id: str,
     include_deleted: bool = Query(False, description="삭제된 PLC도 포함"),
@@ -105,7 +106,7 @@ def get_plcs(
     )
 
 
-@router.put("/plcs/{plc_id}", response_model=PlcUpdateResponse)
+@router.put("/plc/{plc_id}", response_model=PlcUpdateResponse)
 def update_plc(
     plc_id: str,
     request: UpdatePlcRequest,
@@ -119,7 +120,8 @@ def update_plc(
         line=request.line,
         equipment_group=request.equipment_group,
         unit=request.unit,
-        plc_name=request.plc_name
+        plc_name=request.plc_name,
+        update_user=request.update_user
     )
     
     return PlcUpdateResponse(
@@ -134,7 +136,7 @@ def update_plc(
     )
 
 
-@router.delete("/plcs/{plc_id}", response_model=PlcDeleteResponse)
+@router.delete("/plc/{plc_id}", response_model=PlcDeleteResponse)
 def delete_plc(
     plc_id: str,
     plc_service: PlcService = Depends(get_plc_service)
@@ -148,7 +150,7 @@ def delete_plc(
     )
 
 
-@router.post("/plcs/{plc_id}/restore", response_model=PlcRestoreResponse)
+@router.post("/plc/{plc_id}/restore", response_model=PlcRestoreResponse)
 def restore_plc(
     plc_id: str,
     plc_service: PlcService = Depends(get_plc_service)
@@ -198,7 +200,7 @@ def get_plc_count(
     )
 
 
-@router.get("/plcs/exists/{plc_id}", response_model=PlcExistsResponse)
+@router.get("/plc/{plc_id}/exists", response_model=PlcExistsResponse)
 def check_plc_exists(
     plc_id: str,
     plc_service: PlcService = Depends(get_plc_service)
@@ -245,7 +247,7 @@ def get_hierarchy_values(
 
 # ========== ✨ 프로그램 매핑 관련 API ==========
 
-@router.post("/plcs/{plc_id}/map-program", response_model=MapProgramResponse)
+@router.post("/plc/{plc_id}/mapping", response_model=MapProgramResponse)
 def map_program_to_plc(
     plc_id: str,
     request: MapProgramRequest,
@@ -268,7 +270,7 @@ def map_program_to_plc(
     )
 
 
-@router.delete("/plcs/{plc_id}/unmap-program", response_model=UnmapProgramResponse)
+@router.delete("/plc/{plc_id}/mapping", response_model=UnmapProgramResponse)
 def unmap_program_from_plc(
     plc_id: str,
     request: UnmapProgramRequest,
@@ -287,7 +289,7 @@ def unmap_program_from_plc(
     )
 
 
-@router.get("/plcs/{plc_id}/mapping-history", response_model=MappingHistoryResponse)
+@router.get("/plc/{plc_id}/history", response_model=MappingHistoryResponse)
 def get_plc_mapping_history(
     plc_id: str,
     skip: int = Query(0, ge=0, description="건너뜰 개수"),
@@ -345,3 +347,54 @@ def get_unmapped_plcs(
         total=total,
         items=[PlcWithMappingResponse.model_validate(plc) for plc in plcs]
     )
+
+
+# ========== ✨ PLC 계층 구조 트리 조회 API ==========
+
+@router.get("/plcs/tree", response_model=dict)
+def get_plc_tree(
+    is_active: bool = Query(True, description="활성 PLC만 조회"),
+    plc_service: PlcService = Depends(get_plc_service)
+):
+    """
+    PLC 계층 구조를 트리 형태로 조회합니다.
+    
+    - **is_active**: 활성 PLC만 조회 (기본값: True)
+    
+    **반환 구조:**
+    ```json
+    {
+        "data": [
+            {
+                "plant": "PLT1",
+                "processes": [
+                    {
+                        "process": "PLT1-PRC1",
+                        "lines": [
+                            {
+                                "line": "PLT1-PRC1-LN1",
+                                "equipment_groups": [
+                                    {
+                                        "equipment_group": "PLT1-PRC1-LN1-EQ1",
+                                        "unit_data": [
+                                            {
+                                                "unit": "PLT1-PRC1-LN1-EQ1-U1",
+                                                "plc_id": "PLT1-PRC1-LN1-EQ1-U1-PLC01",
+                                                "create_dt": "2023-10-01T10:00:00Z",
+                                                "user": "admin"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+    ```
+    """
+    logger.info(f"PLC 계층 구조 조회 요청: is_active={is_active}")
+    result = plc_service.get_plc_hierarchy(is_active=is_active)
+    return result

@@ -334,7 +334,7 @@ def create_app():
     async def read_chat():
         return FileResponse("llm_chat_client.html")
     
-    @app.get("/plc-search") # PLC 검색 테스트 페이지)
+    @app.get("/plc-search") # PLC 검색 테스트 페이지
     async def read_plc_search():
         return FileResponse("plc-search.html")
     
@@ -347,6 +347,10 @@ def create_app():
     async def read_program_mapping():
         return FileResponse("pgm-mapping.html")
         # return FileResponse("program-mapping.html")
+    
+    @app.get("/plc-tree") # PLC 계층 구조 트리 조회 테스트 페이지
+    async def read_plc_tree():
+        return FileResponse("plc-tree.html")
     
     # Health check endpoint
     @app.get("/health")

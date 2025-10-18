@@ -28,7 +28,8 @@ class PlcService:
         line: str,
         equipment_group: str,
         unit: str,
-        plc_name: str
+        plc_name: str,
+        create_user: Optional[str] = None
     ):
         """PLC 생성"""
         try:
@@ -53,7 +54,8 @@ class PlcService:
                 line=line,
                 equipment_group=equipment_group,
                 unit=unit,
-                plc_name=plc_name
+                plc_name=plc_name,
+                create_user=create_user
             )
             return plc
         except HandledException:
@@ -116,7 +118,8 @@ class PlcService:
         line: Optional[str] = None,
         equipment_group: Optional[str] = None,
         unit: Optional[str] = None,
-        plc_name: Optional[str] = None
+        plc_name: Optional[str] = None,
+        update_user: Optional[str] = None
     ):
         """PLC 정보 수정"""
         try:
@@ -127,7 +130,8 @@ class PlcService:
                 line=line,
                 equipment_group=equipment_group,
                 unit=unit,
-                plc_name=plc_name
+                plc_name=plc_name,
+                update_user=update_user
             )
             if not plc:
                 raise HandledException(ResponseCode.USER_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
@@ -333,3 +337,123 @@ class PlcService:
             raise
         except Exception as e:
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    # ========== ✨ 계층 구조 조회 메서드 ==========
+    
+    def get_plc_hierarchy(
+        self,
+        is_active: Optional[bool] = True
+    ):
+        """PLC 계층 구조 조회
+        
+        Args:
+            is_active: 활성 PLC만 조회 (기본값: True)
+        
+        Returns:
+            dict: 계층 구조로 변환된 PLC 데이터
+        """
+        try:
+            # 1. get_plcs() 사용해서 데이터 조회
+            plcs, total = self.get_plcs(
+                skip=0,
+                limit=10000,  # 전체 조회 (계층 구조는 페이징 불가)
+                is_active=is_active
+            )
+            
+            logger.info(f"PLC 계층 구조 조회: {len(plcs)}개 PLC 조회 완료 (total: {total})")
+            
+            # 데이터가 없는 경우도 정상 처리
+            if not plcs or len(plcs) == 0:
+                logger.info("PLC 데이터가 없어 빈 계층 구조 반환")
+                return {"data": []}
+            
+            # 2. 계층 구조로 변환
+            return self._build_hierarchy(plcs)
+        
+        except HandledException:
+            raise
+        except Exception as e:
+            logger.error(f"PLC 계층 구조 조회 중 오류 발생: {str(e)}", exc_info=True)
+            raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
+    
+    def _build_hierarchy(self, plcs):
+        """PLC 리스트를 계층 구조로 변환
+        
+        Args:
+            plcs: PLC 리스트
+        
+        Returns:
+            dict: 계층 구조 데이터
+        """
+        hierarchy = {}
+        
+        for plc in plcs:
+            # Plant 레벨
+            if plc.plant not in hierarchy:
+                hierarchy[plc.plant] = {}
+            
+            # Process 레벨
+            if plc.process not in hierarchy[plc.plant]:
+                hierarchy[plc.plant][plc.process] = {}
+            
+            # Line 레벨
+            if plc.line not in hierarchy[plc.plant][plc.process]:
+                hierarchy[plc.plant][plc.process][plc.line] = {}
+            
+            # Equipment Group 레벨
+            if plc.equipment_group not in hierarchy[plc.plant][plc.process][plc.line]:
+                hierarchy[plc.plant][plc.process][plc.line][plc.equipment_group] = []
+            
+            # Unit Data 추가
+            hierarchy[plc.plant][plc.process][plc.line][plc.equipment_group].append({
+                "unit": plc.unit,
+                "plc_id": plc.plc_id,
+                "create_dt": plc.create_dt,
+                "user": plc.create_user or "unknown"
+            })
+        
+        # 딕셔너리를 Response 모델로 변환
+        return self._convert_to_response(hierarchy)
+    
+    def _convert_to_response(self, hierarchy):
+        """딕셔너리를 PlcHierarchyResponse 형식으로 변환
+        
+        Args:
+            hierarchy: 계층 구조 딕셔너리
+        
+        Returns:
+            dict: Response 형식의 데이터
+        """
+        plants = []
+        
+        for plant_name, processes_dict in hierarchy.items():
+            processes = []
+            
+            for process_name, lines_dict in processes_dict.items():
+                lines = []
+                
+                for line_name, eq_groups_dict in lines_dict.items():
+                    equipment_groups = []
+                    
+                    for eq_group_name, units in eq_groups_dict.items():
+                        equipment_groups.append({
+                            "equipment_group": eq_group_name,
+                            "unit_data": units
+                        })
+                    
+                    lines.append({
+                        "line": line_name,
+                        "equipment_groups": equipment_groups
+                    })
+                
+                processes.append({
+                    "process": process_name,
+                    "lines": lines
+                })
+            
+            plants.append({
+                "plant": plant_name,
+                "processes": processes
+            })
+        
+        return {"data": plants}

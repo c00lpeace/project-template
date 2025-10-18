@@ -18,7 +18,9 @@ class PlcResponse(BaseModel):
     plc_name: str = Field(..., description="PLC 명칭")
     is_active: bool = Field(..., description="활성 상태")
     create_dt: datetime = Field(..., description="생성일시")
+    create_user: Optional[str] = Field(None, description="생성자")
     update_dt: Optional[datetime] = Field(None, description="수정일시")
+    update_user: Optional[str] = Field(None, description="수정자")
 
 
 class PlcCreateResponse(BaseModel):
@@ -105,7 +107,9 @@ class PlcWithMappingResponse(BaseModel):
     pgm_mapping_user: Optional[str] = Field(None, description="매핑 사용자")
     is_active: bool = Field(..., description="활성 상태")
     create_dt: datetime = Field(..., description="생성일시")
+    create_user: Optional[str] = Field(None, description="생성자")
     update_dt: Optional[datetime] = Field(None, description="수정일시")
+    update_user: Optional[str] = Field(None, description="수정자")
 
 
 class MapProgramResponse(BaseModel):

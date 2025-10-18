@@ -30,7 +30,8 @@ class PLCCrud:
         line: str,
         equipment_group: str,
         unit: str,
-        plc_name: str
+        plc_name: str,
+        create_user: Optional[str] = None
     ) -> PLCMaster:
         """PLC 생성 (IS_ACTIVE=TRUE)"""
         try:
@@ -43,6 +44,7 @@ class PLCCrud:
                 unit=unit,
                 plc_name=plc_name,
                 create_dt=datetime.now(),
+                create_user=create_user,
                 is_active=True
             )
             self.db.add(plc)
@@ -136,7 +138,8 @@ class PLCCrud:
         line: Optional[str] = None,
         equipment_group: Optional[str] = None,
         unit: Optional[str] = None,
-        plc_name: Optional[str] = None
+        plc_name: Optional[str] = None,
+        update_user: Optional[str] = None
     ) -> Optional[PLCMaster]:
         """PLC 정보 수정"""
         try:
@@ -159,6 +162,7 @@ class PLCCrud:
                 plc.plc_name = plc_name
             
             plc.update_dt = datetime.now()
+            plc.update_user = update_user
             
             self.db.commit()
             self.db.refresh(plc)

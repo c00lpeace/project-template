@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLC 트리 조회</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        .control-group label {
+            display: inline-block;
+            width: 120px;
+            font-weight: 600;
+        }
+
+        .control-group input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: 1px solid #666;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #f0f0f0;
+        }
+
+        button:active {
+            background: #e0e0e0;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .result-header {
+            background: #f0f0f0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .tree-container {
+            border: 1px solid #ddd;
+            border-top: none;
+            padding: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .tree-node {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        .tree-item {
+            padding: 5px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tree-item:hover {
+            background: #f9f9f9;
+        }
+
+        .tree-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .tree-toggle {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .tree-children {
+            display: none;
+        }
+
+        .tree-children.expanded {
+            display: block;
+        }
+
+        .unit-data {
+            margin-left: 40px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-left: 3px solid #ccc;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .unit-item {
+            padding: 3px 0;
+            color: #666;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border: 1px solid #ef5350;
+            margin-top: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .raw-json {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .button-group {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PLC 계층 구조 트리 조회</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>활성 상태:</label>
+                <input type="checkbox" id="isActive" checked>
+                <span>활성 PLC만 조회</span>
+            </div>
+            
+            <div class="control-group">
+                <label>API URL:</label>
+                <span id="apiUrl">http://localhost:8000/v1/plcs/tree</span>
+            </div>
+
+            <div class="button-group">
+                <button onclick="fetchTree()">🔍 트리 조회</button>
+                <button onclick="expandAll()">📂 전체 펼치기</button>
+                <button onclick="collapseAll()">📁 전체 접기</button>
+                <button onclick="toggleRawJson()">📋 JSON 보기/숨기기</button>
+            </div>
+        </div>
+
+        <div class="result" id="resultContainer" style="display: none;">
+            <div class="result-header">
+                <span>조회 결과</span>
+                <span class="stats" id="stats"></span>
+            </div>
+            <div class="tree-container" id="treeContainer"></div>
+            <div class="raw-json" id="rawJson" style="display: none;"></div>
+        </div>
+
+        <div class="loading" id="loading" style="display: none;">
+            조회 중...
+        </div>
+
+        <div class="error" id="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        let treeData = null;
+
+        function updateApiUrl() {
+            const isActive = document.getElementById('isActive').checked;
+            const url = `http://localhost:8000/v1/plcs/tree?is_active=${isActive}`;
+            document.getElementById('apiUrl').textContent = url;
+        }
+
+        document.getElementById('isActive').addEventListener('change', updateApiUrl);
+
+        async function fetchTree() {
+            console.log('fetchTree 호출됨'); // 디버그 로그
+            
+            const isActive = document.getElementById('isActive').checked;
+            const url = `http://localhost:8000/v1/plcs/tree?is_active=${isActive}`;
+            
+            console.log('API URL:', url); // 디버그 로그
+
+            // UI 초기화
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                console.log('fetch 시작...'); // 디버그 로그
+                const response = await fetch(url);
+                
+                console.log('fetch 응답 받음:', response.status); // 디버그 로그
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('JSON 파싱 성공:', data); // 디버그 로그
+                treeData = data;
+
+                // 결과 표시
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('resultContainer').style.display = 'block';
+                
+                renderTree(data);
+                updateStats(data);
+                document.getElementById('rawJson').textContent = JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                console.error('fetch 오류:', error); // 디버그 로그
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `오류 발생: ${error.message}`;
+            }
+        }
+
+        function renderTree(data) {
+            const container = document.getElementById('treeContainer');
+            container.innerHTML = '';
+
+            if (!data.data || data.data.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; color: #666;">조회된 데이터가 없습니다.</p>';
+                return;
+            }
+
+            data.data.forEach(plant => {
+                container.appendChild(createPlantNode(plant));
+            });
+        }
+
+        function createPlantNode(plant) {
+            const div = document.createElement('div');
+            div.className = 'tree-node';
+            
+            const item = document.createElement('div');
+            item.className = 'tree-item';
+            item.innerHTML = `
+                <span class="tree-toggle">▶</span>
+                <span class="tree-label">🏭 Plant: ${plant.plant}</span>
+                <span style="color: #999; font-size: 0.85rem;"> (${plant.processes.length}개 공정)</span>
+            `;
+            
+            const children = document.createElement('div');
+            children.className = 'tree-children';
+            
+            plant.processes.forEach(process => {
+                children.appendChild(createProcessNode(process));
+            });
+            
+            item.onclick = (e) => {
+                e.stopPropagation();
+                toggleNode(item, children);
+            };
+            
+            div.appendChild(item);
+            div.appendChild(children);
+            
+            return div;
+        }
+
+        function createProcessNode(process) {
+            const div = document.createElement('div');
+            div.className = 'tree-node';
+            
+            const item = document.createElement('div');
+            item.className = 'tree-item';
+            item.innerHTML = `
+                <span class="tree-toggle">▶</span>
+                <span class="tree-label">⚙️ Process: ${process.process}</span>
+                <span style="color: #999; font-size: 0.85rem;"> (${process.lines.length}개 라인)</span>
+            `;
+            
+            const children = document.createElement('div');
+            children.className = 'tree-children';
+            
+            process.lines.forEach(line => {
+                children.appendChild(createLineNode(line));
+            });
+            
+            item.onclick = (e) => {
+                e.stopPropagation();
+                toggleNode(item, children);
+            };
+            
+            div.appendChild(item);
+            div.appendChild(children);
+            
+            return div;
+        }
+
+        function createLineNode(line) {
+            const div = document.createElement('div');
+            div.className = 'tree-node';
+            
+            const item = document.createElement('div');
+            item.className = 'tree-item';
+            item.innerHTML = `
+                <span class="tree-toggle">▶</span>
+                <span class="tree-label">📍 Line: ${line.line}</span>
+                <span style="color: #999; font-size: 0.85rem;"> (${line.equipment_groups.length}개 장비그룹)</span>
+            `;
+            
+            const children = document.createElement('div');
+            children.className = 'tree-children';
+            
+            line.equipment_groups.forEach(group => {
+                children.appendChild(createEquipmentGroupNode(group));
+            });
+            
+            item.onclick = (e) => {
+                e.stopPropagation();
+                toggleNode(item, children);
+            };
+            
+            div.appendChild(item);
+            div.appendChild(children);
+            
+            return div;
+        }
+
+        function createEquipmentGroupNode(group) {
+            const div = document.createElement('div');
+            div.className = 'tree-node';
+            
+            const item = document.createElement('div');
+            item.className = 'tree-item';
+            item.innerHTML = `
+                <span class="tree-toggle">▶</span>
+                <span class="tree-label">🔧 Equipment Group: ${group.equipment_group}</span>
+                <span style="color: #999; font-size: 0.85rem;"> (${group.unit_data.length}개 Unit)</span>
+            `;
+            
+            const children = document.createElement('div');
+            children.className = 'tree-children';
+            
+            group.unit_data.forEach(unit => {
+                children.appendChild(createUnitNode(unit));
+            });
+            
+            item.onclick = (e) => {
+                e.stopPropagation();
+                toggleNode(item, children);
+            };
+            
+            div.appendChild(item);
+            div.appendChild(children);
+            
+            return div;
+        }
+
+        function createUnitNode(unit) {
+            const div = document.createElement('div');
+            div.className = 'unit-data';
+            div.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 5px;">📦 Unit: ${unit.unit}</div>
+                <div class="unit-item">PLC ID: ${unit.plc_id}</div>
+                <div class="unit-item">생성일시: ${new Date(unit.create_dt).toLocaleString('ko-KR')}</div>
+                <div class="unit-item">생성자: ${unit.user}</div>
+            `;
+            return div;
+        }
+
+        function toggleNode(item, children) {
+            const toggle = item.querySelector('.tree-toggle');
+            const isExpanded = children.classList.contains('expanded');
+            
+            if (isExpanded) {
+                children.classList.remove('expanded');
+                toggle.textContent = '▶';
+            } else {
+                children.classList.add('expanded');
+                toggle.textContent = '▼';
+            }
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.tree-children').forEach(el => {
+                el.classList.add('expanded');
+            });
+            document.querySelectorAll('.tree-toggle').forEach(el => {
+                el.textContent = '▼';
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.tree-children').forEach(el => {
+                el.classList.remove('expanded');
+            });
+            document.querySelectorAll('.tree-toggle').forEach(el => {
+                el.textContent = '▶';
+            });
+        }
+
+        function toggleRawJson() {
+            const jsonDiv = document.getElementById('rawJson');
+            jsonDiv.style.display = jsonDiv.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function updateStats(data) {
+            if (!data.data) {
+                document.getElementById('stats').textContent = '';
+                return;
+            }
+
+            let plantCount = data.data.length;
+            let processCount = 0;
+            let lineCount = 0;
+            let equipmentCount = 0;
+            let unitCount = 0;
+
+            data.data.forEach(plant => {
+                processCount += plant.processes.length;
+                plant.processes.forEach(process => {
+                    lineCount += process.lines.length;
+                    process.lines.forEach(line => {
+                        equipmentCount += line.equipment_groups.length;
+                        line.equipment_groups.forEach(group => {
+                            unitCount += group.unit_data.length;
+                        });
+                    });
+                });
+            });
+
+            document.getElementById('stats').textContent = 
+                `Plant: ${plantCount} | Process: ${processCount} | Line: ${lineCount} | Equipment: ${equipmentCount} | Unit: ${unitCount}`;
+        }
+
+        // 페이지 로드 시 API URL 업데이트
+        updateApiUrl();
+    </script>
+</body>
+</html>
