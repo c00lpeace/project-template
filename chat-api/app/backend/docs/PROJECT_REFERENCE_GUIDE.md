@@ -1,6 +1,6 @@
 # 🏗️ PLC-Program Mapping System - 프로젝트 참조 가이드
 
-> **최종 업데이트:** 2025-10-19 15:23:00 (일요일 오후 3시 23분)  
+> **최종 업데이트:** 2025-10-20 01:31:00 (일요일 오전 1시 31분)  
 > **목적:** Claude가 매번 파일을 검색하지 않고 빠르게 프로젝트 구조를 파악하기 위한 참조 문서
 
 ---
@@ -246,7 +246,58 @@ update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
 
 ## ✨ 최근 변경사항
 
-### 2025-10-19 15:23:00 - 템플릿 관리 기능 구현 완료 (일요일 오후 3시 23분) ⭐ NEW
+### 2025-10-20 01:31:00 - Excel 업로드 및 에러 처리 개선 ⭐ UPDATE
+
+**수정된 컴포넌트:**
+```
+1. ✅ document_service.py - metadata 처리 개선
+   - create_document_from_file()에 metadata_json 파라미터 전달
+   - upload_path 키 사용 (file_path 대신)
+   - update_document() 메서드로 metadata 업데이트
+   - 업데이트 성공/실패 로깅 추가
+
+2. ✅ template_service.py - HandledException 사용법 수정
+   - ResponseCode를 첫 번째 인자로 전달
+   - msg 파라미터 사용
+   - http_status_code 선택적 지정
+   - INVALID_INPUT → INVALID_DATA_FORMAT/REQUIRED_FIELD_MISSING 변경
+
+3. ✅ requirements.txt - openpyxl 추가
+   - pandas의 Excel 읽기 기능을 위해 필요
+```
+
+**주요 버그 수정:**
+```
+• metadata 파라미터 전달 문제 해결
+  - create_document_from_file(metadata_json=metadata) 형태로 전달
+  - shared_core의 **additional_metadata로 받음
+  
+• file_path 키 에러 해결
+  - result.get('upload_path') or result.get('file_path') 사용
+  - shared_core가 반환하는 실제 키명 확인
+  
+• update_metadata() 메서드 없음 해결
+  - DocumentCRUD.update_document(metadata_json=metadata) 사용
+  - **kwargs 형태로 전달
+  - hasattr() 검증으로 안전성 확보
+  
+• HandledException 사용법 오류 수정
+  - status_code, error_code, message → ResponseCode, msg, http_status_code
+  - ResponseCode Enum 값을 첫 번째 인자로 전달
+```
+
+**테스트 결과:**
+```
+✅ Excel 파일 업로드 성공
+✅ DOCUMENTS 테이블에 metadata 저장 성공
+✅ Excel 파싱 성공
+✅ PGM_TEMPLATE 테이블에 Bulk Insert 성공
+✅ metadata에 template_parse_result 추가 성공
+```
+
+---
+
+### 2025-10-19 15:23:00 - 템플릿 관리 기능 구현 완료 (일요일 오후 3시 23분)
 
 **구현 완료된 컴포넌트:**
 ```
@@ -270,12 +321,11 @@ update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
    - get_template_tree() - 계층 구조 조회
    - _build_template_hierarchy() - 트리 변환
 
-5. ✅ document_service.py - 업로드 통합 ⭐ 업데이트
-   - document_type="pgm_template" 처리 추가
-   - metadata 파라미터 추가 (pgm_id 전달)
-   - Excel 업로드 시 자동 파싱
-   - METADATA_JSON에서 pgm_id 추출
-   - metadata_json에 파싱 결과 저장
+5. ✅ document_service.py - 업로드 통합 ⭐ 업데이트 (2025-10-20)
+   - metadata_json 파라미터로 전달 (metadata 대신)
+   - upload_path 키 사용 (file_path 대신)
+   - update_document() 사용하여 metadata 업데이트
+   - 업데이트 성공/실패 로깅
 
 6. ✅ template_router.py - API 엔드포인트
    - GET /v1/templates/{pgm_id} - 트리 구조 조회
