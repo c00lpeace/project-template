@@ -31,7 +31,8 @@ class DocumentService(BaseDocumentService):
         user_id: str,
         is_public: bool = False,
         permissions: List[str] = None,
-        document_type: str = 'common'
+        document_type: str = 'common',
+        metadata: Dict = None  # 참고: 내부적으로 metadata_json으로 변환됨
     ) -> Dict:
         """문서 업로드 (FastAPI UploadFile 전용)"""
         try:
@@ -69,7 +70,8 @@ class DocumentService(BaseDocumentService):
                 user_id=user_id,
                 is_public=is_public,
                 permissions=permissions,
-                document_type=document_type
+                document_type=document_type,
+                metadata_json=metadata  # ⭐ metadata_json으로 전달 (**additional_metadata로 받음)
             )
             
             # ⭐ NEW: document_type이 "pgm_template"이면 Excel 파싱
@@ -86,7 +88,12 @@ class DocumentService(BaseDocumentService):
                         logger.warning(f"pgm_template 업로드 시 metadata에 pgm_id 필요: {result['document_id']}")
                     else:
                         # Excel 파싱 및 PGM_TEMPLATE 테이블 저장
-                        file_path = result['file_path']
+                        # ⭐ file_path 대신 upload_path 사용
+                        file_path = result.get('upload_path') or result.get('file_path')
+                        if not file_path:
+                            logger.error(f"file_path를 찾을 수 없음: result keys = {list(result.keys())}")
+                            raise ValueError("file_path를 result에서 찾을 수 없습니다")
+                        
                         parse_result = template_service.parse_and_save(
                             document_id=result['document_id'],
                             file_path=file_path,
@@ -97,10 +104,18 @@ class DocumentService(BaseDocumentService):
                         # 파싱 결과를 metadata_json에 추가 저장
                         metadata['template_parse_result'] = parse_result
                         
-                        # metadata 업데이트
+                        # ⭐ update_document() 사용하여 metadata 업데이트
                         from shared_core.crud import DocumentCRUD
                         doc_crud = DocumentCRUD(self.db)
-                        doc_crud.update_metadata(result['document_id'], metadata)
+                        success = doc_crud.update_document(
+                            result['document_id'],
+                            metadata_json=metadata  # ⭐ **kwargs로 전달됨
+                        )
+                        
+                        if success:
+                            logger.info(f"문서 metadata 업데이트 성공: {result['document_id']}")
+                        else:
+                            logger.warning(f"문서를 찾을 수 없음: {result['document_id']}")
                         
                         # 응답에 파싱 결과 포함
                         result['metadata_json'] = metadata
@@ -461,11 +476,11 @@ class DocumentService(BaseDocumentService):
                 'failed_count': 0
             }
         """
-        import zipfile
         import os
-        from pathlib import Path
-        from datetime import datetime
+        import zipfile
         from collections import defaultdict
+        from datetime import datetime
+        from pathlib import Path
         
         try:
             # 1. 해제 대상 디렉토리 생성

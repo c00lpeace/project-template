@@ -1,15 +1,15 @@
 # _*_ coding: utf-8 _*_
 """Document Management API endpoints."""
-from fastapi import APIRouter, Depends, UploadFile, File, Form, Query
-from fastapi.responses import StreamingResponse
-from typing import List, Optional
 import io
 import logging
 import os
 from pathlib import Path
+from typing import List, Optional
 
-from ai_backend.core.dependencies import get_document_service
 from ai_backend.api.services.document_service import DocumentService
+from ai_backend.core.dependencies import get_document_service
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
+from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["document-management"])
@@ -21,10 +21,23 @@ def upload_document_request(
     user_id: str = Form(default="user"),
     is_public: bool = Form(default=False),
     permissions: Optional[str] = Form(default=None),  # JSON 문자열로 권한 리스트 전달
-    document_type: str = Form(default="common"),  # common, type1, type2
+    document_type: str = Form(default="common"),  # common, type1, type2, pgm_template
+    metadata: Optional[str] = Form(default=None),  # JSON 문자열로 metadata 전달 (pgm_template 사용 시 필수, 예: {"pgm_id": "PGM001"})
     document_service: DocumentService = Depends(get_document_service)
 ):
-    """문서 업로드 요청"""
+    """문서 업로드 요청
+    
+    Args:
+        file: 업로드할 파일
+        user_id: 사용자 ID
+        is_public: 공개 여부
+        permissions: 권한 리스트 (JSON 문자열)
+        document_type: 문서 타입 (common, type1, type2, pgm_template)
+        metadata: 메타데이터 (JSON 문자열, 예: {"pgm_id": "PGM001"})
+    
+    Returns:
+        업로드 결과
+    """
     # Service Layer에서 전파된 HandledException을 그대로 전파
     # Global Exception Handler가 자동으로 처리
     
@@ -40,12 +53,25 @@ def upload_document_request(
                 "message": "권한 파라미터가 올바른 JSON 형식이 아닙니다."
             }
     
+    # ⭐ NEW: metadata 파라미터 처리 (JSON 문자열을 딕셔너리로 변환)
+    parsed_metadata = None
+    if metadata:
+        try:
+            import json
+            parsed_metadata = json.loads(metadata)
+        except (json.JSONDecodeError, TypeError):
+            return {
+                "status": "error",
+                "message": "metadata 파라미터가 올바른 JSON 형식이 아닙니다."
+            }
+    
     result = document_service.upload_document(
         file=file,
         user_id=user_id,
         is_public=is_public,
         permissions=parsed_permissions,
-        document_type=document_type
+        document_type=document_type,
+        metadata=parsed_metadata
     )
     return {
         "status": "success",
@@ -64,10 +90,11 @@ def upload_folder(
     """폴더 전체 업로드 (Document 테이블에 저장)"""
     try:
         import os
-        from pathlib import Path
-        from fastapi import UploadFile
         from io import BytesIO
-        
+        from pathlib import Path
+
+        from fastapi import UploadFile
+
         # 폴더 경로 검증
         if not folder_path or not os.path.exists(folder_path):
             return {

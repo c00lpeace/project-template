@@ -42,13 +42,13 @@ class TemplateService:
         """
         logger.info(f"템플릿 파싱 시작: pgm_id={pgm_id}, document_id={document_id}")
         
-        # 1. PGM_ID 존재 여부 확인
-        program = ProgramCrud.get_program_by_id(self.db, pgm_id)
+        # 1. PGM_ID 존재 여부 확인 (대소문자 문제)
+        program = ProgramCrud.get_program_by_id(self.db, pgm_id) 
         if not program:
             raise HandledException(
-                status_code=404,
-                error_code=ResponseCode.NOT_FOUND.code,
-                message=f"프로그램을 찾을 수 없습니다: {pgm_id}"
+                ResponseCode.PROGRAM_NOT_FOUND,
+                msg=f"프로그램을 찾을 수 없습니다: {pgm_id}",
+                http_status_code=404
             )
         
         # 2. Excel 파일 읽기
@@ -58,9 +58,8 @@ class TemplateService:
         except Exception as e:
             logger.error(f"Excel 파일 읽기 실패: {e}")
             raise HandledException(
-                status_code=400,
-                error_code=ResponseCode.INVALID_INPUT.code,
-                message=f"Excel 파일을 읽을 수 없습니다: {str(e)}"
+                ResponseCode.INVALID_DATA_FORMAT,
+                msg=f"Excel 파일을 읽을 수 없습니다: {str(e)}"
             )
         
         # 3. 필수 컬럼 검증
@@ -71,9 +70,8 @@ class TemplateService:
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
             raise HandledException(
-                status_code=400,
-                error_code=ResponseCode.INVALID_INPUT.code,
-                message=f"필수 컬럼이 없습니다: {missing}"
+                ResponseCode.REQUIRED_FIELD_MISSING,
+                msg=f"필수 컬럼이 없습니다: {missing}"
             )
         
         # 4. 데이터 변환
@@ -105,9 +103,8 @@ class TemplateService:
         
         if not templates:
             raise HandledException(
-                status_code=400,
-                error_code=ResponseCode.INVALID_INPUT.code,
-                message=f"엑셀에 {pgm_id}에 해당하는 유효한 데이터가 없습니다"
+                ResponseCode.INVALID_DATA_FORMAT,
+                msg=f"엑셀에 {pgm_id}에 해당하는 유효한 데이터가 없습니다"
             )
         
         logger.info(f"데이터 변환 완료: {len(templates)}개 (스킵: {skipped_rows}개)")

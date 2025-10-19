@@ -127,6 +127,48 @@ GET /v1/pgm-history/{history_id}          # 특정 이력 조회
 
 ## 🎯 핵심 기능 Flow
 
+### ⭐ NEW: Excel 템플릿 업로드 Flow (2025-10-19)
+```
+Client
+    ↓
+1. Excel 파일 + metadata={"pgm_id": "PGM001"} 준비
+    ↓
+POST /v1/upload
+    - file: template.xlsx
+    - document_type: "pgm_template"
+    - metadata: '{"pgm_id": "PGM001"}'
+    ↓
+2. document_router.upload_document_request()
+    - metadata JSON 파싱: '{...}' → {'pgm_id': 'PGM001'}
+    ↓
+3. document_service.upload_document(metadata={'pgm_id': 'PGM001'})
+    ├─ create_document_from_file() 호출
+    ├─ DOCUMENTS 테이블에 저장
+    │   - METADATA_JSON: '{"pgm_id": "PGM001"}'
+    │   - DOCUMENT_ID: "doc-uuid-123"
+    └─ document_type == "pgm_template" 체크
+    ↓
+4. document_service (pgm_id 추출)
+    - result['metadata_json']['pgm_id'] → 'PGM001'
+    ↓
+5. template_service.parse_and_save()
+    ├─ pgm_id='PGM001' 전달
+    ├─ pd.read_excel() - Excel 읽기
+    ├─ 필수 컬럼 검증 (PGM ID, Folder ID, Logic ID)
+    ├─ 데이터 변환 (dict 리스트)
+    ├─ 기존 템플릿 삭제 (PGM_ID='PGM001')
+    └─ template_crud.bulk_create()
+    ↓
+6. PGM_TEMPLATE 테이블에 Bulk INSERT
+    - 각 행마다 PGM_ID='PGM001' 저장
+    - DOCUMENT_ID='doc-uuid-123' 연결
+    ↓
+7. DOCUMENTS 테이블 metadata 업데이트
+    - template_parse_result 추가
+    ↓
+Response: 성공 메시지 + 파싱 결과
+```
+
 ### ⭐ NEW: PLC 계층 구조 트리 조회 Flow (2025-10-17)
 ```
 Client → GET /v1/plcs/tree?is_active=true
@@ -228,9 +270,11 @@ update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
    - get_template_tree() - 계층 구조 조회
    - _build_template_hierarchy() - 트리 변환
 
-5. ✅ document_service.py - 업로드 통합
+5. ✅ document_service.py - 업로드 통합 ⭐ 업데이트
    - document_type="pgm_template" 처리 추가
+   - metadata 파라미터 추가 (pgm_id 전달)
    - Excel 업로드 시 자동 파싱
+   - METADATA_JSON에서 pgm_id 추출
    - metadata_json에 파싱 결과 저장
 
 6. ✅ template_router.py - API 엔드포인트
@@ -254,7 +298,16 @@ update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
 • Excel 파일 업로드 통합
   - 기존 document_router의 /v1/upload 사용
   - document_type="pgm_template" 지정
-  - metadata에 pgm_id 포함 필수
+  - metadata에 pgm_id 포함 필수 ⭐
+  - metadata='{"pgm_id": "PGM001"}' 형식
+  
+• pgm_id 흐름 ⭐
+  1. Client: metadata='{"pgm_id": "PGM001"}' 전송
+  2. document_router: JSON 파싱 → {'pgm_id': 'PGM001'}
+  3. document_service: DOCUMENTS 테이블 METADATA_JSON 컬럼에 저장
+  4. document_service: METADATA_JSON에서 pgm_id 추출
+  5. template_service: pgm_id='PGM001' 사용하여 Excel 파싱
+  6. PGM_TEMPLATE: 각 행마다 PGM_ID='PGM001' 저장
   
 • 자동 Excel 파싱
   - pandas로 Excel 읽기
@@ -265,7 +318,7 @@ update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
 • 계층 구조 조회
   - Folder → Sub Folder → Logic 3단계 계층
   - 통계 정보 포함
-  - 원본 문서 연결
+  - 원본 문서 연결 (DOCUMENT_ID)
 
 • 검색 및 필터링
   - pgm_id, folder_id, logic_name으로 검색
@@ -274,7 +327,7 @@ update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
 
 **사용 예시:**
 ```bash
-# 1. Excel 파일 업로드
+# 1. Excel 파일 업로드 (⭐ metadata에 pgm_id 필수!)
 curl -X POST http://localhost:8000/v1/upload \
   -F "file=@template.xlsx" \
   -F "user_id=admin" \
@@ -293,19 +346,30 @@ curl -X DELETE http://localhost:8000/v1/templates/PGM001
 
 **데이터 흐름:**
 ```
-Excel 파일
+Excel 파일 + metadata={"pgm_id": "PGM001"}
     ↓
 POST /v1/upload (document_type="pgm_template")
     ↓
-1. DOCUMENTS 테이블에 저장
+1. document_router: metadata JSON 파싱
+    metadata='...'' → parsed_metadata={'pgm_id': 'PGM001'}
     ↓
-2. template_service.parse_and_save() 호출
+2. document_service: DOCUMENTS 테이블에 저장
+    METADATA_JSON 컬럼에 {'pgm_id': 'PGM001'} 저장
     ↓
-3. Excel 파싱 (pandas)
+3. document_service: METADATA_JSON에서 pgm_id 추출
+    pgm_id = result['metadata_json']['pgm_id']  → 'PGM001'
     ↓
-4. PGM_TEMPLATE 테이블에 Bulk Insert
+4. template_service.parse_and_save() 호출
+    pgm_id='PGM001' 전달
     ↓
-5. metadata_json에 파싱 결과 저장
+5. Excel 파싱 (pandas)
+    필수 컬럼: PGM ID, Folder ID, Logic ID 등
+    ↓
+6. PGM_TEMPLATE 테이블에 Bulk Insert
+    각 행마다 PGM_ID='PGM001' 저장
+    ↓
+7. metadata_json에 파싱 결과 저장
+    template_parse_result 추가
 ```
 
 ---
