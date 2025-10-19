@@ -2,8 +2,9 @@
 """Program REST API endpoints."""
 
 from fastapi import APIRouter, Depends, Query
-from ai_backend.core.dependencies import get_program_service
+from ai_backend.core.dependencies import get_program_service, get_plc_service
 from ai_backend.api.services.program_service import ProgramService
+from ai_backend.api.services.plc_service import PlcService
 from ai_backend.types.request.program_request import (
     ProgramCreateRequest,
     ProgramUpdateRequest,
@@ -12,6 +13,10 @@ from ai_backend.types.response.program_response import (
     ProgramResponse,
     ProgramListResponse,
     ProgramDeleteResponse,
+)
+from ai_backend.types.response.plc_response import (
+    PlcsByProgramResponse,
+    PlcWithMappingResponse,
 )
 from typing import Optional
 import logging
@@ -103,4 +108,31 @@ def delete_program(
     return ProgramDeleteResponse(
         pgm_id=pgm_id,
         message="프로그램이 성공적으로 삭제되었습니다."
+    )
+
+
+# ========== ✨ 프로그램별 매핑 PLC 조회 API ==========
+
+@router.get("/programs/{pgm_id}/plcs", response_model=PlcsByProgramResponse)
+def get_plcs_by_program(
+    pgm_id: str,
+    skip: int = Query(0, ge=0, description="건너뛸 개수"),
+    limit: int = Query(100, ge=1, le=100, description="조회할 개수"),
+    plc_service: PlcService = Depends(get_plc_service)
+):
+    """
+    특정 프로그램에 매핑된 PLC 목록을 조회합니다.
+    
+    이 엔드포인트는 해당 프로그램을 사용하는 모든 PLC를 조회합니다.
+    """
+    plcs, total = plc_service.get_plcs_by_program(
+        pgm_id=pgm_id,
+        skip=skip,
+        limit=limit
+    )
+    
+    return PlcsByProgramResponse(
+        pgm_id=pgm_id,
+        total=total,
+        items=[PlcWithMappingResponse.model_validate(plc) for plc in plcs]
     )

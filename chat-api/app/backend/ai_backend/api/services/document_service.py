@@ -72,6 +72,50 @@ class DocumentService(BaseDocumentService):
                 document_type=document_type
             )
             
+            # ⭐ NEW: document_type이 "pgm_template"이면 Excel 파싱
+            if document_type == "pgm_template":
+                try:
+                    from ai_backend.api.services.template_service import TemplateService
+                    template_service = TemplateService(self.db)
+                    
+                    # metadata에서 pgm_id 추출
+                    metadata = result.get('metadata_json') or {}
+                    pgm_id = metadata.get('pgm_id')
+                    
+                    if not pgm_id:
+                        logger.warning(f"pgm_template 업로드 시 metadata에 pgm_id 필요: {result['document_id']}")
+                    else:
+                        # Excel 파싱 및 PGM_TEMPLATE 테이블 저장
+                        file_path = result['file_path']
+                        parse_result = template_service.parse_and_save(
+                            document_id=result['document_id'],
+                            file_path=file_path,
+                            pgm_id=pgm_id,
+                            user_id=user_id
+                        )
+                        
+                        # 파싱 결과를 metadata_json에 추가 저장
+                        metadata['template_parse_result'] = parse_result
+                        
+                        # metadata 업데이트
+                        from shared_core.crud import DocumentCRUD
+                        doc_crud = DocumentCRUD(self.db)
+                        doc_crud.update_metadata(result['document_id'], metadata)
+                        
+                        # 응답에 파싱 결과 포함
+                        result['metadata_json'] = metadata
+                        result['template_parse_result'] = parse_result
+                        
+                        logger.info(f"템플릿 파싱 완료: {parse_result}")
+                        
+                except HandledException:
+                    # 템플릿 파싱 실패 시 예외 전파
+                    raise
+                except Exception as e:
+                    logger.error(f"템플릿 파싱 실패: {e}")
+                    # 파싱 실패해도 문서는 저장되었으므로 경고만 로그
+                    # 원한다면 여기서 예외를 전파할 수도 있음
+            
             return result
                 
         except HandledException:

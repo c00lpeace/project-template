@@ -31,6 +31,7 @@ httpx>=0.24.0
 
 # Data processing
 pandas>=2.0.0
+openpyxl>=3.0.0  # Excel file support for pandas
 
 # Utilities
 validators>=0.22.0

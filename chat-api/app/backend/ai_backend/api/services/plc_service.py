@@ -2,10 +2,11 @@
 """PLC Service for handling PLC operations."""
 import logging
 from typing import List, Optional
-from ai_backend.database.crud.plc_crud import PLCCrud
-from sqlalchemy.orm import Session
+
+from ai_backend.database.crud.plc_crud import PlcCrud
 from ai_backend.types.response.exceptions import HandledException
 from ai_backend.types.response.response_code import ResponseCode
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class PlcService:
             raise ValueError("Database session is required")
         
         self.db = db
-        self.plc_crud = PLCCrud(db)
+        self.plc_crud = PlcCrud(db)
     
     def create_plc(
         self,

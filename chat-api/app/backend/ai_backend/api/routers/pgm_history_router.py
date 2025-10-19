@@ -1,17 +1,18 @@
 # _*_ coding: utf-8 _*_
 """PGM Mapping History REST API endpoints."""
 
-from fastapi import APIRouter, Depends, Query
-from ai_backend.core.dependencies import get_pgm_history_service
+import logging
+from typing import Optional
+
 from ai_backend.api.services.pgm_history_service import PgmHistoryService
+from ai_backend.core.dependencies import get_pgm_history_service
+from ai_backend.database.models.pgm_mapping_models import PgmMappingAction
 from ai_backend.types.response.pgm_history_response import (
-    MappingHistoryResponse,
     MappingHistoryItemResponse,
+    MappingHistoryResponse,
     MappingHistoryStatsResponse,
 )
-from ai_backend.database.models.mapping_models import MappingAction
-from typing import Optional
-import logging
+from fastapi import APIRouter, Depends, Query
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["pgm-history"])
@@ -88,7 +89,7 @@ def get_recent_mapping_history(
     action_enum = None
     if action:
         try:
-            action_enum = MappingAction(action)
+            action_enum = PgmMappingAction(action)
         except ValueError:
             pass
     

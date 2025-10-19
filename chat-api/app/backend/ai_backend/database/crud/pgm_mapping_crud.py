@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional, Tuple
 from datetime import datetime
 
-from ai_backend.database.models.mapping_models import PgmMappingHistory, MappingAction
+from ai_backend.database.models.pgm_mapping_models import PgmMappingHistory, PgmMappingAction
 
 __all__ = [
     "PgmMappingHistoryCrud",
@@ -23,7 +23,7 @@ class PgmMappingHistoryCrud:
         db: Session,
         plc_id: str,
         pgm_id: Optional[str],
-        action: MappingAction,
+        action: PgmMappingAction,
         action_user: str,
         prev_pgm_id: Optional[str] = None,
         notes: Optional[str] = None
@@ -127,7 +127,7 @@ class PgmMappingHistoryCrud:
         db: Session,
         skip: int = 0,
         limit: int = 100,
-        action: Optional[MappingAction] = None
+        action: Optional[PgmMappingAction] = None
     ) -> Tuple[List[PgmMappingHistory], int]:
         """
         최근 매핑 변경 이력 조회 (전체)
@@ -161,7 +161,7 @@ class PgmMappingHistoryCrud:
         ).count()
     
     @staticmethod
-    def count_histories_by_action(db: Session, action: MappingAction) -> int:
+    def count_histories_by_action(db: Session, action: PgmMappingAction) -> int:
         """특정 액션 타입의 이력 개수"""
         return db.query(PgmMappingHistory).filter(
             PgmMappingHistory.action == action.value

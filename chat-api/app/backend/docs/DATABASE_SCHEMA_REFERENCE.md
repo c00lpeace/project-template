@@ -1,6 +1,6 @@
 # 🗄️ Database Schema Reference
 
-> **최종 업데이트:** 2025-10-17  
+> **최종 업데이트:** 2025-10-19 15:23:00 (일요일 오후 3시 23분)  
 > **목적:** 모든 테이블 구조와 관계를 한눈에 파악  
 > **⭐ 중요:** 실제 코드 기준으로 작성됨
 
@@ -136,6 +136,114 @@ class PgmMappingHistory(Base):
 | UPDATE | 프로그램 변경 | 기존 프로그램을 다른 프로그램으로 변경 |
 | DELETE | 매핑 해제 | PLC에서 프로그램 매핑 제거 |
 | RESTORE | 매핑 복원 | 이전에 삭제된 매핑을 다시 복원 |
+
+---
+
+## 4️⃣ PGM_TEMPLATE ⭐ NEW (2025-10-19)
+
+### 테이블 정의
+```sql
+CREATE TABLE PGM_TEMPLATE (
+    TEMPLATE_ID INT PRIMARY KEY AUTO_INCREMENT,
+    
+    -- 문서 연결 (원본 Excel 파일)
+    DOCUMENT_ID VARCHAR(100),
+    
+    -- 프로그램 참조
+    PGM_ID VARCHAR(50) NOT NULL,
+    
+    -- 폴더 구조 (3단계 계층)
+    FOLDER_ID VARCHAR(20) NOT NULL,
+    FOLDER_NAME VARCHAR(200) NOT NULL,
+    SUB_FOLDER_NAME VARCHAR(200),
+    
+    -- 로직 정보
+    LOGIC_ID VARCHAR(20) NOT NULL,
+    LOGIC_NAME VARCHAR(200) NOT NULL,
+    
+    -- 메타데이터
+    CREATE_DT DATETIME NOT NULL DEFAULT NOW(),
+    CREATE_USER VARCHAR(50),
+    
+    -- 인덱스
+    INDEX idx_document_id (DOCUMENT_ID),
+    INDEX idx_pgm_id (PGM_ID),
+    INDEX idx_folder_id (FOLDER_ID),
+    INDEX idx_logic_id (LOGIC_ID),
+    INDEX idx_pgm_folder_logic (PGM_ID, FOLDER_ID, LOGIC_ID)
+);
+```
+
+### SQLAlchemy 모델
+```python
+class PgmTemplate(Base):
+    __tablename__ = "PGM_TEMPLATE"
+    
+    template_id = Column('TEMPLATE_ID', Integer, primary_key=True, autoincrement=True)
+    document_id = Column('DOCUMENT_ID', String(100), nullable=True)
+    pgm_id = Column('PGM_ID', String(50), nullable=False)
+    folder_id = Column('FOLDER_ID', String(20), nullable=False)
+    folder_name = Column('FOLDER_NAME', String(200), nullable=False)
+    sub_folder_name = Column('SUB_FOLDER_NAME', String(200), nullable=True)
+    logic_id = Column('LOGIC_ID', String(20), nullable=False)
+    logic_name = Column('LOGIC_NAME', String(200), nullable=False)
+    create_dt = Column('CREATE_DT', DateTime, nullable=False, server_default=func.now())
+    create_user = Column('CREATE_USER', String(50), nullable=True)
+```
+
+### 컬럼 설명
+| 컬럼명 | 타입 | NULL | 설명 | 예시 |
+|--------|------|------|------|------|
+| TEMPLATE_ID | INT | NOT NULL | 템플릿 ID (PK, AUTO_INCREMENT) | 1, 2, 3... |
+| DOCUMENT_ID | VARCHAR(100) | NULL | 원본 Excel 문서 ID | "doc-uuid-123" |
+| PGM_ID | VARCHAR(50) | NOT NULL | 프로그램 ID (FK → PROGRAMS.PGM_ID) | "PGM001" |
+| FOLDER_ID | VARCHAR(20) | NOT NULL | 폴더 ID | "0", "20", "40" |
+| FOLDER_NAME | VARCHAR(200) | NOT NULL | 폴더 명칭 | "Unit01_Endplate Box Loader" |
+| SUB_FOLDER_NAME | VARCHAR(200) | NULL | 서브 폴더 명칭 | "Assy11_Endplate Box Loader" |
+| LOGIC_ID | VARCHAR(20) | NOT NULL | 로직 ID | "0000_11", "0001_11" |
+| LOGIC_NAME | VARCHAR(200) | NOT NULL | 로직 명칭 | "Mode", "Input", "Interlock" |
+| CREATE_DT | DATETIME | NOT NULL | 생성일시 | 2025-10-19 15:00:00 |
+| CREATE_USER | VARCHAR(50) | NULL | 생성자 | "admin" |
+
+### 샘플 데이터
+```sql
+INSERT INTO PGM_TEMPLATE VALUES
+(1, 'doc-123', 'PGM001', '0', 'Unit01_Endplate Box Loader', 'Assy11_Endplate Box Loader', 
+ '0000_11', 'Mode', '2025-10-19 15:00:00', 'admin'),
+(2, 'doc-123', 'PGM001', '0', 'Unit01_Endplate Box Loader', 'Assy11_Endplate Box Loader', 
+ '0001_11', 'Input', '2025-10-19 15:00:00', 'admin'),
+(3, 'doc-123', 'PGM001', '0', 'Unit01_Endplate Box Loader', 'Assy11_Endplate Box Loader', 
+ '0002_11', 'Interlock', '2025-10-19 15:00:00', 'admin');
+```
+
+### 계층 구조 (Hierarchy) ⭐
+```
+PGM_TEMPLATE의 3단계 계층:
+
+1. FOLDER (Folder ID + Folder Name)
+   ↓
+2. SUB_FOLDER (Sub Folder Name)
+   ↓
+3. LOGIC (Logic ID + Logic Name)
+
+예시:
+PGM001
+  └─ Folder: 0 "Unit01_Endplate Box Loader"
+      └─ Sub Folder: "Assy11_Endplate Box Loader"
+          ├─ Logic: 0000_11 "Mode"
+          ├─ Logic: 0001_11 "Input"
+          └─ Logic: 0002_11 "Interlock"
+```
+
+### 인덱스
+```sql
+PRIMARY KEY (TEMPLATE_ID)
+INDEX idx_document_id (DOCUMENT_ID)
+INDEX idx_pgm_id (PGM_ID)
+INDEX idx_folder_id (FOLDER_ID)
+INDEX idx_logic_id (LOGIC_ID)
+INDEX idx_pgm_folder_logic (PGM_ID, FOLDER_ID, LOGIC_ID)
+```
 
 ---
 

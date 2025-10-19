@@ -78,6 +78,21 @@ class ResponseCode(Enum):
     DOCUMENT_UPLOAD_PROCESSING = (-1815, "업로드가 아직 처리 중입니다.")
     DOCUMENT_UPLOAD_FAILED = (-1816, "업로드 처리에 실패했습니다.")
     
+    # PROGRAM_SERVICE = (-2100 ~ -2199)
+    PROGRAM_NOT_FOUND = (-2101, "프로그램을 찾을 수 없습니다.")
+    PROGRAM_ALREADY_EXISTS = (-2102, "이미 존재하는 프로그램입니다.")
+    PROGRAM_CREATE_ERROR = (-2103, "프로그램 생성 중 오류가 발생했습니다.")
+    PROGRAM_UPDATE_ERROR = (-2104, "프로그램 수정 중 오류가 발생했습니다.")
+    PROGRAM_DELETE_ERROR = (-2105, "프로그램 삭제 중 오류가 발생했습니다.")
+    
+    # PLC_SERVICE = (-2200 ~ -2299)
+    PLC_NOT_FOUND = (-2201, "PLC를 찾을 수 없습니다.")
+    PLC_ALREADY_EXISTS = (-2202, "이미 존재하는 PLC입니다.")
+    PLC_CREATE_ERROR = (-2203, "PLC 생성 중 오류가 발생했습니다.")
+    PLC_UPDATE_ERROR = (-2204, "PLC 수정 중 오류가 발생했습니다.")
+    PLC_DELETE_ERROR = (-2205, "PLC 삭제 중 오류가 발생했습니다.")
+    PLC_MAPPING_ERROR = (-2206, "PLC 매핑 중 오류가 발생했습니다.")
+    
     # GROUP_SERVICE = (-1900 ~ -1999)
     GROUP_NOT_FOUND = (-1901, "그룹을 찾을 수 없습니다.")
     GROUP_ALREADY_EXISTS = (-1902, "이미 존재하는 그룹입니다.")

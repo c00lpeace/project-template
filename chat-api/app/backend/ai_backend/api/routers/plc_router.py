@@ -26,8 +26,6 @@ from ai_backend.types.response.plc_response import (
     PlcWithMappingResponse,
     MapProgramResponse,
     UnmapProgramResponse,
-    MappingHistoryResponse,
-    PlcsByProgramResponse,
     UnmappedPlcsResponse
 )
 from typing import Optional
@@ -286,48 +284,6 @@ def unmap_program_from_plc(
     return UnmapProgramResponse(
         plc_id=plc_id,
         message=f"PLC '{plc_id}'의 프로그램 매핑이 성공적으로 해제되었습니다."
-    )
-
-
-@router.get("/plc/{plc_id}/history", response_model=MappingHistoryResponse)
-def get_plc_mapping_history(
-    plc_id: str,
-    skip: int = Query(0, ge=0, description="건너뜰 개수"),
-    limit: int = Query(50, ge=1, le=100, description="조회할 개수"),
-    plc_service: PlcService = Depends(get_plc_service)
-):
-    """PLC의 프로그램 매핑 변경 이력을 조회합니다."""
-    histories, total = plc_service.get_plc_mapping_history(
-        plc_id=plc_id,
-        skip=skip,
-        limit=limit
-    )
-    
-    from ai_backend.types.response.plc_response import MappingHistoryItemResponse
-    return MappingHistoryResponse(
-        total=total,
-        items=[MappingHistoryItemResponse.model_validate(h) for h in histories]
-    )
-
-
-@router.get("/programs/{pgm_id}/plcs", response_model=PlcsByProgramResponse)
-def get_plcs_by_program(
-    pgm_id: str,
-    skip: int = Query(0, ge=0, description="건너뜰 개수"),
-    limit: int = Query(100, ge=1, le=1000, description="조회할 개수"),
-    plc_service: PlcService = Depends(get_plc_service)
-):
-    """특정 프로그램에 매핑된 PLC 목록을 조회합니다."""
-    plcs, total = plc_service.get_plcs_by_program(
-        pgm_id=pgm_id,
-        skip=skip,
-        limit=limit
-    )
-    
-    return PlcsByProgramResponse(
-        pgm_id=pgm_id,
-        total=total,
-        items=[PlcWithMappingResponse.model_validate(plc) for plc in plcs]
     )
 
 

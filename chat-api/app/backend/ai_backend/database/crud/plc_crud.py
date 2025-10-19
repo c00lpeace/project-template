@@ -1,20 +1,24 @@
 # _*_ coding: utf-8 _*_
 """PLC CRUD operations with database - 프로그램 매핑 메서드 추가"""
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from typing import Optional, List, Tuple
+import logging
 from datetime import datetime
+from typing import List, Optional, Tuple
+
+from ai_backend.database.models.pgm_mapping_models import (
+    PgmMappingAction,
+    PgmMappingHistory,
+)
 from ai_backend.database.models.plc_models import PLCMaster
-from ai_backend.database.models.mapping_models import PgmMappingHistory, MappingAction
 from ai_backend.types.response.exceptions import HandledException
 from ai_backend.types.response.response_code import ResponseCode
-import logging
+from sqlalchemy import and_, or_
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 
-class PLCCrud:
+class PlcCrud:
     """PLC 관련 CRUD 작업을 처리하는 클래스"""
     
     def __init__(self, db: Session):
@@ -314,13 +318,13 @@ class PLCCrud:
             
             # 이전 매핑 정보 백업
             prev_pgm_id = plc.pgm_id
-            action = MappingAction.CREATE if not prev_pgm_id else MappingAction.UPDATE
+            action = PgmMappingAction.CREATE if not prev_pgm_id else PgmMappingAction.UPDATE
             
             # 1. PLC_MASTER 업데이트 (현재 상태)
             plc.pgm_id = pgm_id
             plc.pgm_mapping_dt = datetime.now()
             plc.pgm_mapping_user = user
-            plc.update_dt = datetime.now()
+            # plc.update_dt = datetime.now()
             
             # 2. PGM_MAPPING_HISTORY에 이력 추가
             history = PgmMappingHistory(
@@ -384,7 +388,7 @@ class PLCCrud:
             history = PgmMappingHistory(
                 plc_id=plc_id,
                 pgm_id=None,
-                action=MappingAction.DELETE.value,
+                action=PgmMappingAction.DELETE.value,
                 action_dt=datetime.now(),
                 action_user=user,
                 prev_pgm_id=prev_pgm_id,

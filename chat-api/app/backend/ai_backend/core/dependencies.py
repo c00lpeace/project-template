@@ -11,6 +11,7 @@ from ai_backend.api.services.group_service import GroupService
 from ai_backend.api.services.plc_service import PlcService
 from ai_backend.api.services.program_service import ProgramService
 from ai_backend.api.services.pgm_history_service import PgmHistoryService
+from ai_backend.api.services.template_service import TemplateService
 from ai_backend.database.base import Database
 from ai_backend.config import settings
 from ai_backend.cache.redis_client import get_redis_client
@@ -138,3 +139,10 @@ def get_pgm_history_service(
 ) -> PgmHistoryService:
     """PGM 매핑 이력 서비스 의존성 주입"""
     return PgmHistoryService(db=db)
+
+
+def get_template_service(
+    db: Session = Depends(get_db)
+) -> TemplateService:
+    """템플릿 서비스 의존성 주입"""
+    return TemplateService(db=db)

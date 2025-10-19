@@ -33,9 +33,8 @@ class ProgramService:
         existing = ProgramCrud.get_program_by_id(self.db, pgm_id)
         if existing:
             raise HandledException(
-                status_code=ResponseCode.CONFLICT.status_code,
-                error_code=ResponseCode.CONFLICT.error_code,
-                message=f"프로그램 ID '{pgm_id}'가 이미 존재합니다."
+                resp_code=ResponseCode.PROGRAM_ALREADY_EXISTS,
+                msg=f"프로그램 ID '{pgm_id}'가 이미 존재합니다."
             )
         
         program_data = {
@@ -57,9 +56,8 @@ class ProgramService:
         program = ProgramCrud.get_program_by_id(self.db, pgm_id)
         if not program:
             raise HandledException(
-                status_code=ResponseCode.NOT_FOUND.status_code,
-                error_code=ResponseCode.NOT_FOUND.error_code,
-                message=f"프로그램 ID '{pgm_id}'를 찾을 수 없습니다."
+                resp_code=ResponseCode.PROGRAM_NOT_FOUND,
+                msg=f"프로그램 ID '{pgm_id}'를 찾을 수 없습니다."
             )
         return program
     
@@ -100,9 +98,8 @@ class ProgramService:
         existing = ProgramCrud.get_program_by_id(self.db, pgm_id)
         if not existing:
             raise HandledException(
-                status_code=ResponseCode.NOT_FOUND.status_code,
-                error_code=ResponseCode.NOT_FOUND.error_code,
-                message=f"프로그램 ID '{pgm_id}'를 찾을 수 없습니다."
+                resp_code=ResponseCode.PROGRAM_NOT_FOUND,
+                msg=f"프로그램 ID '{pgm_id}'를 찾을 수 없습니다."
             )
         
         # 수정 데이터 준비
@@ -130,9 +127,8 @@ class ProgramService:
         existing = ProgramCrud.get_program_by_id(self.db, pgm_id)
         if not existing:
             raise HandledException(
-                status_code=ResponseCode.NOT_FOUND.status_code,
-                error_code=ResponseCode.NOT_FOUND.error_code,
-                message=f"프로그램 ID '{pgm_id}'를 찾을 수 없습니다."
+                resp_code=ResponseCode.PROGRAM_NOT_FOUND,
+                msg=f"프로그램 ID '{pgm_id}'를 찾을 수 없습니다."
             )
         
         # 삭제 실행

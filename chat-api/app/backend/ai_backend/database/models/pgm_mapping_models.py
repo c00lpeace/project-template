@@ -8,11 +8,11 @@ from sqlalchemy.sql.expression import func
 
 __all__ = [
     "PgmMappingHistory",
-    "MappingAction",
+    "PgmMappingAction",
 ]
 
 
-class MappingAction(str, enum.Enum):
+class PgmMappingAction(str, enum.Enum):
     """매핑 액션 타입"""
     CREATE = "CREATE"    # 최초 매핑
     UPDATE = "UPDATE"    # 프로그램 변경

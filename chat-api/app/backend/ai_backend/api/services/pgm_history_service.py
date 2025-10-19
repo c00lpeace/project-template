@@ -1,13 +1,17 @@
 # _*_ coding: utf-8 _*_
 """PGM Mapping History service."""
 
-from sqlalchemy.orm import Session
-from ai_backend.database.crud.mapping_crud import PgmMappingHistoryCrud
-from ai_backend.database.models.mapping_models import PgmMappingHistory, MappingAction
+import logging
+from typing import List, Optional, Tuple
+
+from ai_backend.database.crud.pgm_mapping_crud import PgmMappingHistoryCrud
+from ai_backend.database.models.pgm_mapping_models import (
+    PgmMappingAction,
+    PgmMappingHistory,
+)
 from ai_backend.types.response.exceptions import HandledException
 from ai_backend.types.response.response_code import ResponseCode
-from typing import Optional, List, Tuple
-import logging
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +27,8 @@ class PgmHistoryService:
         history = PgmMappingHistoryCrud.get_history_by_id(self.db, history_id)
         if not history:
             raise HandledException(
-                status_code=ResponseCode.NOT_FOUND.status_code,
-                error_code=ResponseCode.NOT_FOUND.error_code,
-                message=f"이력 ID '{history_id}'를 찾을 수 없습니다."
+                resp_code=ResponseCode.PROGRAM_NOT_FOUND,
+                msg=f"이력 ID '{history_id}'를 찾을 수 없습니다."
             )
         return history
     
@@ -81,7 +84,7 @@ class PgmHistoryService:
         self,
         skip: int = 0,
         limit: int = 100,
-        action: Optional[MappingAction] = None
+        action: Optional[PgmMappingAction] = None
     ) -> Tuple[List[PgmMappingHistory], int]:
         """최근 매핑 변경 이력 조회 (전체)"""
         histories, total = PgmMappingHistoryCrud.get_recent_histories(
@@ -104,10 +107,10 @@ class PgmHistoryService:
         )
         
         # 액션별 카운트
-        create_count = sum(1 for h in all_histories if h.action == MappingAction.CREATE.value)
-        update_count = sum(1 for h in all_histories if h.action == MappingAction.UPDATE.value)
-        delete_count = sum(1 for h in all_histories if h.action == MappingAction.DELETE.value)
-        restore_count = sum(1 for h in all_histories if h.action == MappingAction.RESTORE.value)
+        create_count = sum(1 for h in all_histories if h.action == PgmMappingAction.CREATE.value)
+        update_count = sum(1 for h in all_histories if h.action == PgmMappingAction.UPDATE.value)
+        delete_count = sum(1 for h in all_histories if h.action == PgmMappingAction.DELETE.value)
+        restore_count = sum(1 for h in all_histories if h.action == PgmMappingAction.RESTORE.value)
         
         # 최근 액션
         latest_action = PgmMappingHistoryCrud.get_latest_action_by_plc(self.db, plc_id)

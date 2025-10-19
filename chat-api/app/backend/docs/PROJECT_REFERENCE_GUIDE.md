@@ -1,6 +1,6 @@
 # 🏗️ PLC-Program Mapping System - 프로젝트 참조 가이드
 
-> **최종 업데이트:** 2025-10-19 02:19:00 (일요일 오전 2시 19분)  
+> **최종 업데이트:** 2025-10-19 15:23:00 (일요일 오후 3시 23분)  
 > **목적:** Claude가 매번 파일을 검색하지 않고 빠르게 프로젝트 구조를 파악하기 위한 참조 문서
 
 ---
@@ -56,9 +56,29 @@ ai_backend/
 
 ---
 
-## 🔗 API 엔드포인트 (총 52개)
+## 🔗 API 엔드포인트 (총 62개) ⚡ 업데이트
 
-### PLC API (plc_router.py) - 총 16개
+### Template API (template_router.py) - 5개 ⭐ NEW
+```
+GET    /v1/templates/{pgm_id}        # 프로그램별 템플릿 트리 구조 조회
+GET    /v1/templates                 # 템플릿 목록 조회 (검색, 페이징)
+DELETE /v1/templates/{pgm_id}        # 프로그램별 템플릿 삭제
+GET    /v1/templates-summary         # 모든 프로그램 템플릿 통계
+GET    /v1/templates/count/{pgm_id}  # 프로그램별 템플릿 개수 조회
+```
+
+**특별 기능:**
+```
+• Excel 업로드는 기존 document_router 사용:
+  POST /v1/upload (document_type="pgm_template", metadata={"pgm_id": "..."})
+  
+• 자동 파싱:
+  - Excel 업로드 시 document_service가 자동으로 template_service 호출
+  - PGM_TEMPLATE 테이블에 자동 저장
+  - metadata_json에 파싱 결과 기록
+```
+
+### PLC API (plc_router.py) - 16개
 
 **단일 PLC 리소스 (`/plc/{plc_id}`):**
 ```
@@ -184,6 +204,112 @@ update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
 
 ## ✨ 최근 변경사항
 
+### 2025-10-19 15:23:00 - 템플릿 관리 기능 구현 완료 (일요일 오후 3시 23분) ⭐ NEW
+
+**구현 완료된 컴포넌트:**
+```
+1. ✅ template_models.py - PgmTemplate 모델
+   - PGM_TEMPLATE 테이블 (프로그램 구조 템플릿)
+   - DOCUMENT_ID 연결 (원본 Excel 파일)
+
+2. ✅ template_crud.py - CRUD 작업
+   - bulk_create() - 일괄 생성
+   - get_templates_by_pgm() - 프로그램별 조회
+   - delete_by_pgm_id() - 프로그램별 삭제
+   - search_templates() - 검색 기능
+
+3. ✅ template_response.py - Response 타입
+   - TemplateTreeResponse - 트리 구조 응답
+   - TemplateListResponse - 목록 응답
+   - TemplateStatsResponse - 통계 응답
+
+4. ✅ template_service.py - 비즈니스 로직
+   - parse_and_save() - Excel 파싱 및 저장
+   - get_template_tree() - 계층 구조 조회
+   - _build_template_hierarchy() - 트리 변환
+
+5. ✅ document_service.py - 업로드 통합
+   - document_type="pgm_template" 처리 추가
+   - Excel 업로드 시 자동 파싱
+   - metadata_json에 파싱 결과 저장
+
+6. ✅ template_router.py - API 엔드포인트
+   - GET /v1/templates/{pgm_id} - 트리 구조 조회
+   - GET /v1/templates - 목록 조회
+   - DELETE /v1/templates/{pgm_id} - 삭제
+   - GET /v1/templates-summary - 통계
+
+7. ✅ dependencies.py - 의존성 주입
+   - get_template_service() 추가
+
+8. ✅ main.py - Router 등록
+   - template_router 등록 완료
+
+9. ✅ requirements.txt - 패키지 추가
+   - openpyxl>=3.0.0 추가 (Excel 지원)
+```
+
+**기능 설명:**
+```
+• Excel 파일 업로드 통합
+  - 기존 document_router의 /v1/upload 사용
+  - document_type="pgm_template" 지정
+  - metadata에 pgm_id 포함 필수
+  
+• 자동 Excel 파싱
+  - pandas로 Excel 읽기
+  - 필수 컬럼 검증 (PGM ID, Folder ID, Logic ID 등)
+  - PGM_TEMPLATE 테이블에 Bulk Insert
+  - 기존 템플릿 덮어쓰기
+
+• 계층 구조 조회
+  - Folder → Sub Folder → Logic 3단계 계층
+  - 통계 정보 포함
+  - 원본 문서 연결
+
+• 검색 및 필터링
+  - pgm_id, folder_id, logic_name으로 검색
+  - 페이지네이션 지원
+```
+
+**사용 예시:**
+```bash
+# 1. Excel 파일 업로드
+curl -X POST http://localhost:8000/v1/upload \
+  -F "file=@template.xlsx" \
+  -F "user_id=admin" \
+  -F "document_type=pgm_template" \
+  -F 'metadata={"pgm_id": "PGM001"}'
+
+# 2. 템플릿 트리 조회
+curl http://localhost:8000/v1/templates/PGM001
+
+# 3. 템플릿 목록 조회
+curl "http://localhost:8000/v1/templates?pgm_id=PGM001&page=1&page_size=100"
+
+# 4. 템플릿 삭제
+curl -X DELETE http://localhost:8000/v1/templates/PGM001
+```
+
+**데이터 흐름:**
+```
+Excel 파일
+    ↓
+POST /v1/upload (document_type="pgm_template")
+    ↓
+1. DOCUMENTS 테이블에 저장
+    ↓
+2. template_service.parse_and_save() 호출
+    ↓
+3. Excel 파싱 (pandas)
+    ↓
+4. PGM_TEMPLATE 테이블에 Bulk Insert
+    ↓
+5. metadata_json에 파싱 결과 저장
+```
+
+---
+
 ### 2025-10-19 02:19:00 - PLC 트리 조회 API 구현 완료 (일요일 오전 2시 19분)
 
 **구현 완료된 컴포넌트:**
@@ -289,7 +415,8 @@ update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
 - **PLC 관련**: plc_models.py, plc_crud.py, plc_service.py, plc_router.py
 - **프로그램 관련**: program_models.py, program_crud.py, program_service.py, program_router.py
 - **매핑 이력**: mapping_models.py, mapping_crud.py, pgm_history_service.py, pgm_history_router.py
-- **계층 구조**: plc_hierarchy_response.py, get_plc_hierarchy(), /v1/plcs/tree ⭐ NEW
+- **템플릿 관련**: template_models.py, template_crud.py, template_service.py, template_router.py ⭐ NEW
+- **계층 구조**: plc_hierarchy_response.py, get_plc_hierarchy(), /v1/plcs/tree
 - **문서 관리**: document_models.py, document_service.py, document_router.py
 
 ---

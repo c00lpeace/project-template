@@ -314,6 +314,10 @@ def create_app():
     from ai_backend.api.routers.pgm_history_router import router as pgm_history_router
     app.include_router(pgm_history_router, prefix=api_prefix)
     
+    # Template 라우터 추가 (템플릿 관리)
+    from ai_backend.api.routers.template_router import router as template_router
+    app.include_router(template_router, prefix=api_prefix)
+    
     # CORS 설정 - 설정 파일에서 가져오기
     origins = settings.get_cors_origins()
     
