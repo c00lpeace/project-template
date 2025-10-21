@@ -403,21 +403,25 @@ class PlcService:
             
             # Equipment Group 레벨
             if plc.equipment_group not in hierarchy[plc.plant][plc.process][plc.line]:
-                hierarchy[plc.plant][plc.process][plc.line][plc.equipment_group] = []
+                hierarchy[plc.plant][plc.process][plc.line][plc.equipment_group] = {}
             
-            # Unit Data 추가
-            hierarchy[plc.plant][plc.process][plc.line][plc.equipment_group].append({
-                "unit": plc.unit,
-                "plc_id": plc.plc_id,
-                "create_dt": plc.create_dt,
-                "user": plc.create_user or "unknown"
+            # Unit 레벨 (딕셔너리로 변경)
+            if plc.unit not in hierarchy[plc.plant][plc.process][plc.line][plc.equipment_group]:
+                hierarchy[plc.plant][plc.process][plc.line][plc.equipment_group][plc.unit] = []
+            
+            # info 추가
+            hierarchy[plc.plant][plc.process][plc.line][plc.equipment_group][plc.unit].append({
+                "plcId": plc.plc_id,
+                "plcNm": plc.plc_name,
+                "regDt": plc.create_dt.isoformat() if plc.create_dt else None,
+                "regUsr": plc.create_user or "unknown"
             })
         
         # 딕셔너리를 Response 모델로 변환
         return self._convert_to_response(hierarchy)
     
     def _convert_to_response(self, hierarchy):
-        """딕셔너리를 PlcHierarchyResponse 형식으로 변환
+        """딕셔너리를 PlcHierarchyResponse 형식으로 변환 (TO-BE 구조)
         
         Args:
             hierarchy: 계층 구조 딕셔너리
@@ -436,25 +440,32 @@ class PlcService:
                 for line_name, eq_groups_dict in lines_dict.items():
                     equipment_groups = []
                     
-                    for eq_group_name, units in eq_groups_dict.items():
+                    for eq_group_name, units_dict in eq_groups_dict.items():
+                        units = []
+                        for unit_name, info_list in units_dict.items():
+                            units.append({
+                                "unit": unit_name,
+                                "info": info_list  # 리스트 형태로 전달
+                            })
+                        
                         equipment_groups.append({
-                            "equipment_group": eq_group_name,
-                            "unit_data": units
+                            "eqpGrp": eq_group_name,
+                            "unitList": units
                         })
                     
                     lines.append({
                         "line": line_name,
-                        "equipment_groups": equipment_groups
+                        "eqpGrpList": equipment_groups
                     })
                 
                 processes.append({
-                    "process": process_name,
-                    "lines": lines
+                    "proc": process_name,
+                    "lineList": lines
                 })
             
             plants.append({
-                "plant": plant_name,
-                "processes": processes
+                "plt": plant_name,
+                "procList": processes
             })
         
         return {"data": plants}

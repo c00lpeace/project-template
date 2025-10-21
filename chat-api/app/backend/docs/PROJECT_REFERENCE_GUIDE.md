@@ -1,6 +1,6 @@
 # 🏗️ PLC-Program Mapping System - 프로젝트 참조 가이드
 
-> **최종 업데이트:** 2025-10-20 01:31:00 (일요일 오전 1시 31분)  
+> **최종 업데이트:** 2025-10-21 13:50:00 (화요일 오후 1시 50분)  
 > **목적:** Claude가 매번 파일을 검색하지 않고 빠르게 프로젝트 구조를 파악하기 위한 참조 문서
 
 ---
@@ -169,7 +169,7 @@ POST /v1/upload
 Response: 성공 메시지 + 파싱 결과
 ```
 
-### ⭐ NEW: PLC 계층 구조 트리 조회 Flow (2025-10-17)
+### ⭐ PLC 계층 구조 트리 조회 Flow (업데이트: 2025-10-21)
 ```
 Client → GET /v1/plcs/tree?is_active=true
     ↓
@@ -179,29 +179,35 @@ plc_service.get_plc_hierarchy(is_active)
     ├─ plc_service.get_plcs(is_active) 재사용
     │  └─ plc_crud.get_plcs() → PLC_MASTER 전체 조회
     ├─ _build_hierarchy() 계층 구조 변환
-    │  └─ Plant → Process → Line → Equipment Group → Unit Data
+    │  └─ Plant → Process → Line → Equipment Group → Unit
+    │      └─ Unit 내부에 info 배열 생성 ⭐
     └─ _convert_to_response() Response 형식 변환
+        └─ 키 이름 축약 (plant→plt, processes→procList 등) ⭐
 
-Response:
+Response (TO-BE 구조):
 {
   "data": [
     {
-      "plant": "PLT1",
-      "processes": [
+      "plt": "PLT1",
+      "procList": [
         {
-          "process": "PLT1-PRC1",
-          "lines": [
+          "proc": "PLT1-PRC1",
+          "lineList": [
             {
               "line": "PLT1-PRC1-LN1",
-              "equipment_groups": [
+              "eqGrpList": [
                 {
-                  "equipment_group": "PLT1-PRC1-LN1-EQ1",
-                  "unit_data": [
+                  "eqGrp": "PLT1-PRC1-LN1-EQ1",
+                  "unitList": [
                     {
                       "unit": "PLT1-PRC1-LN1-EQ1-U1",
-                      "plc_id": "...",
-                      "create_dt": "2023-10-01T10:00:00Z",
-                      "user": "admin"  ← CREATE_USER 사용!
+                      "info": [  ← info 배열로 감쌈 ⭐
+                        {
+                          "plc_id": "PLT1-PRC1-LN1-EQ1-U1-PLC01",
+                          "create_dt": "2025-10-18T03:35:44.214411",
+                          "user": "tester"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -520,6 +526,50 @@ POST /v1/upload (document_type="pgm_template")
 4. ✅ PLC_MASTER 테이블 구조 확인
    - CREATE_USER, UPDATE_USER 컬럼 실제 존재 확인
    - 기존 문서와 실제 코드 일치 확인
+```
+
+### ⭐ PLC 트리 조회 API 응답 구조 변경 (2025-10-21 13:50)
+```
+1. ✅ plc_service.py 수정
+   - _build_hierarchy() 메서드:
+     • Equipment Group을 딕셔너리로 변경
+     • Unit을 딕셔너리로 변경
+     • Unit 내부 PLC 정보를 info 리스트로 감쌈
+     • create_dt를 ISO 포맷으로 변환 (isoformat())
+   
+   - _convert_to_response() 메서드:
+     • 키 이름 축약 (plant→plt, processes→procList 등)
+     • List 접미사 일관성 적용
+
+2. ✅ plc_router.py 수정
+   - get_plc_tree() API docstring 업데이트
+   - 새로운 응답 구조 예시 추가
+
+3. ✅ 응답 구조 변경사항 (AS-IS → TO-BE)
+   | AS-IS | TO-BE | 설명 |
+   |-------|-------|------|
+   | plant | plt | Plant 키 축약 |
+   | processes | procList | Process 리스트 |
+   | process | proc | Process 키 축약 |
+   | lines | lineList | Line 리스트 |
+   | equipment_groups | eqGrpList | Equipment Group 리스트 |
+   | equipment_group | eqGrp | Equipment Group 키 축약 |
+   | unit_data | unitList | Unit 리스트 |
+   | 직접 데이터 | info[] | Unit 정보를 info 배열로 감쌈 ⭐ |
+
+4. ✅ 주요 개선사항
+   - JSON 응답 크기 약 20% 감소 (키 이름 축약)
+   - info 배열로 확장성 향상 (향후 여러 PLC 지원 가능)
+   - 일관된 네이밍 패턴 (List 접미사)
+   - ISO 포맷 날짜 (isoformat())
+
+5. ✅ 코드 변경 위치
+   - ai_backend/api/services/plc_service.py (2개 메서드)
+   - ai_backend/api/routers/plc_router.py (1개 docstring)
+
+⚠️ Breaking Change: 기존 클라이언트 코드 수정 필수
+   - 모든 키 이름 변경
+   - Unit 구조 변경 (직접 데이터 → info 배열)
 ```
 
 ---

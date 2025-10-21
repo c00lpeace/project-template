@@ -305,7 +305,7 @@ def get_unmapped_plcs(
     )
 
 
-# ========== ✨ PLC 계층 구조 트리 조회 API ==========
+# ========== PLC 계층 구조 트리 조회 API ==========
 
 @router.get("/plcs/tree", response_model=dict)
 def get_plc_tree(
@@ -313,7 +313,7 @@ def get_plc_tree(
     plc_service: PlcService = Depends(get_plc_service)
 ):
     """
-    PLC 계층 구조를 트리 형태로 조회합니다.
+    PLC 계층 구조를 트리 형태로 조회
     
     - **is_active**: 활성 PLC만 조회 (기본값: True)
     
@@ -322,22 +322,26 @@ def get_plc_tree(
     {
         "data": [
             {
-                "plant": "PLT1",
-                "processes": [
+                "plt": "PLT1",
+                "procList": [
                     {
-                        "process": "PLT1-PRC1",
-                        "lines": [
+                        "proc": "PLT1-PRC1",
+                        "lineList": [
                             {
                                 "line": "PLT1-PRC1-LN1",
-                                "equipment_groups": [
+                                "eqGrpList": [
                                     {
-                                        "equipment_group": "PLT1-PRC1-LN1-EQ1",
-                                        "unit_data": [
+                                        "eqGrp": "PLT1-PRC1-LN1-EQ1",
+                                        "unitList": [
                                             {
                                                 "unit": "PLT1-PRC1-LN1-EQ1-U1",
-                                                "plc_id": "PLT1-PRC1-LN1-EQ1-U1-PLC01",
-                                                "create_dt": "2023-10-01T10:00:00Z",
-                                                "user": "admin"
+                                                "info": [
+                                                    {
+                                                        "plc_id": "PLT1-PRC1-LN1-EQ1-U1-PLC01",
+                                                        "create_dt": "2023-10-01T10:00:00",
+                                                        "user": "admin"
+                                                    }
+                                                ]
                                             }
                                         ]
                                     }

@@ -423,9 +423,95 @@ datetime.now(timezone.utc)
 
 ---
 
-**작업 완료 시각:** 2025-10-19 02:19:00 (일요일 오전 2시 19분)  
+## 🆕 최신 작업 내역
+
+### 2025-10-21 - PLC 트리 조회 API 응답 구조 변경
+
+#### ✅ 구현 완료 항목
+
+**1. 수정된 파일 (2개)**
+```
+ai_backend/api/services/plc_service.py
+  - _build_hierarchy() 메서드 수정
+  - _convert_to_response() 메서드 수정
+
+ai_backend/api/routers/plc_router.py
+  - get_plc_tree() docstring 업데이트
+```
+
+**2. 응답 구조 변경사항**
+| AS-IS | TO-BE | 설명 |
+|-------|-------|------|
+| `plant` | `plt` | Plant 키 축약 |
+| `processes` | `procList` | Process 배열 |
+| `process` | `proc` | Process 키 축약 |
+| `lines` | `lineList` | Line 배열 |
+| `equipment_groups` | `eqGrpList` | Equipment Group 배열 |
+| `equipment_group` | `eqGrp` | Equipment Group 키 축약 |
+| `unit_data` | `unitList` | Unit 배열 |
+| **직접 데이터** | **info 배열** | Unit 정보를 info 배열로 감쌈 ⭐ |
+
+**3. 구조 비교**
+
+AS-IS:
+```json
+{
+  "unit": "PLT1-PRC1-LN1-EQ1-U1",
+  "plc_id": "...",
+  "create_dt": "...",
+  "user": "..."
+}
+```
+
+TO-BE:
+```json
+{
+  "unit": "PLT1-PRC1-LN1-EQ1-U1",
+  "info": [
+    {
+      "plc_id": "...",
+      "create_dt": "...",
+      "user": "..."
+    }
+  ]
+}
+```
+
+**4. 주요 개선사항**
+- ✅ 키 이름 축약으로 JSON 크기 감소
+- ✅ `info` 배열로 확장성 향상
+- ✅ 일관된 네이밍 패턴 (List 접미사)
+- ✅ TO-BE 구조와 완전히 일치
+
+**5. ⚠️ 주의사항**
+- **Breaking Change**: 기존 클라이언트 코드 수정 필수
+- **프론트엔드**: 응답 구조 변경에 맞춰 수정 필요
+- **서버 재시작**: 변경사항 적용을 위해 필수
+
+**6. 테스트 방법**
+```bash
+# 서버 재시작
+cd D:\project-template\chat-api\app\backend
+python -m uvicorn ai_backend.main:app --reload --port 8000
+
+# API 호출
+curl -X GET "http://localhost:8000/v1/plcs/tree?is_active=true"
+
+# Swagger UI
+http://localhost:8000/docs
+```
+
+**작업 완료 시각:** 2025-10-21  
 **작업자:** Claude (Anthropic AI Assistant)  
 **프로젝트:** PLC-Program Mapping System
+
+---
+
+## 📅 이전 작업 내역
+
+### 2025-10-19 - PLC 계층 구조 트리 조회 API 추가
+
+(이하 내용 유지)
 
 🚀 **Happy Coding!**
 

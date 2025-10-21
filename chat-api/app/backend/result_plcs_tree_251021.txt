@@ -1,0 +1,506 @@
+{
+    "data": [
+        {
+            "plt": "PLT1",
+            "procList": [
+                {
+                    "proc": "PLT1-PRC1",
+                    "lineList": [
+                        {
+                            "line": "PLT1-PRC1-LN1",
+                            "eqpGrpList": [
+                                {
+                                    "eqpGrp": "PLT1-PRC1-LN1-EQ2",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT1-PRC1-LN1-EQ2-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC1-LN1-EQ2-U2-PLC04",
+                                                    "plcNm": "테스트4",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT1-PRC1-LN1-EQ2-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC1-LN1-EQ2-U1-PLC03",
+                                                    "plcNm": "테스트3",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "eqpGrp": "PLT1-PRC1-LN1-EQ1",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT1-PRC1-LN1-EQ1-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC1-LN1-EQ1-U1-PLC01",
+                                                    "plcNm": "테스트1",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT1-PRC1-LN1-EQ1-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC1-LN1-EQ1-U2-PLC02",
+                                                    "plcNm": "테스트2",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "line": "PLT1-PRC1-LN2",
+                            "eqpGrpList": [
+                                {
+                                    "eqpGrp": "PLT1-PRC1-LN2-EQ1",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT1-PRC1-LN2-EQ1-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC1-LN2-EQ1-U1-PLC05",
+                                                    "plcNm": "테스트5",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT1-PRC1-LN2-EQ1-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC1-LN2-EQ1-U2-PLC06",
+                                                    "plcNm": "테스트6",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "eqpGrp": "PLT1-PRC1-LN2-EQ2",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT1-PRC1-LN2-EQ2-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC1-LN2-EQ2-U1-PLC07",
+                                                    "plcNm": "테스트7",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT1-PRC1-LN2-EQ2-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC1-LN2-EQ2-U2-PLC08",
+                                                    "plcNm": "테스트8",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "proc": "PLT1-PRC2",
+                    "lineList": [
+                        {
+                            "line": "PLT1-PRC2-LN1",
+                            "eqpGrpList": [
+                                {
+                                    "eqpGrp": "PLT1-PRC2-LN1-EQ1",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT1-PRC2-LN1-EQ1-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC2-LN1-EQ1-U1-PLC09",
+                                                    "plcNm": "테스트9",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT1-PRC2-LN1-EQ1-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC2-LN1-EQ1-U2-PLC10",
+                                                    "plcNm": "테스트10",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "eqpGrp": "PLT1-PRC2-LN1-EQ2",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT1-PRC2-LN1-EQ2-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC2-LN1-EQ2-U1-PLC11",
+                                                    "plcNm": "테스트11",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT1-PRC2-LN1-EQ2-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC2-LN1-EQ2-U2-PLC12",
+                                                    "plcNm": "테스트12",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "line": "PLT1-PRC2-LN2",
+                            "eqpGrpList": [
+                                {
+                                    "eqpGrp": "PLT1-PRC2-LN2-EQ1",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT1-PRC2-LN2-EQ1-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC2-LN2-EQ1-U1-PLC13",
+                                                    "plcNm": "테스트13",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT1-PRC2-LN2-EQ1-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC2-LN2-EQ1-U2-PLC14",
+                                                    "plcNm": "테스트14",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "eqpGrp": "PLT1-PRC2-LN2-EQ2",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT1-PRC2-LN2-EQ2-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC2-LN2-EQ2-U1-PLC15",
+                                                    "plcNm": "테스트15",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT1-PRC2-LN2-EQ2-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT1-PRC2-LN2-EQ2-U2-PLC16",
+                                                    "plcNm": "테스트16",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "plt": "PLT2",
+            "procList": [
+                {
+                    "proc": "PLT2-PRC1",
+                    "lineList": [
+                        {
+                            "line": "PLT2-PRC1-LN1",
+                            "eqpGrpList": [
+                                {
+                                    "eqpGrp": "PLT2-PRC1-LN1-EQ1",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT2-PRC1-LN1-EQ1-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC1-LN1-EQ1-U1-PLC17",
+                                                    "plcNm": "테스트17",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT2-PRC1-LN1-EQ1-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC1-LN1-EQ1-U2-PLC18",
+                                                    "plcNm": "테스트18",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "eqpGrp": "PLT2-PRC1-LN1-EQ2",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT2-PRC1-LN1-EQ2-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC1-LN1-EQ2-U1-PLC19",
+                                                    "plcNm": "테스트19",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT2-PRC1-LN1-EQ2-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC1-LN1-EQ2-U2-PLC20",
+                                                    "plcNm": "테스트20",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "line": "PLT2-PRC1-LN2",
+                            "eqpGrpList": [
+                                {
+                                    "eqpGrp": "PLT2-PRC1-LN2-EQ1",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT2-PRC1-LN2-EQ1-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC1-LN2-EQ1-U1-PLC21",
+                                                    "plcNm": "테스트21",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT2-PRC1-LN2-EQ1-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC1-LN2-EQ1-U2-PLC22",
+                                                    "plcNm": "테스트22",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "eqpGrp": "PLT2-PRC1-LN2-EQ2",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT2-PRC1-LN2-EQ2-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC1-LN2-EQ2-U1-PLC23",
+                                                    "plcNm": "테스트23",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT2-PRC1-LN2-EQ2-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC1-LN2-EQ2-U2-PLC24",
+                                                    "plcNm": "테스트24",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "proc": "PLT2-PRC2",
+                    "lineList": [
+                        {
+                            "line": "PLT2-PRC2-LN1",
+                            "eqpGrpList": [
+                                {
+                                    "eqpGrp": "PLT2-PRC2-LN1-EQ1",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT2-PRC2-LN1-EQ1-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC2-LN1-EQ1-U1-PLC25",
+                                                    "plcNm": "테스트25",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT2-PRC2-LN1-EQ1-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC2-LN1-EQ1-U2-PLC26",
+                                                    "plcNm": "테스트26",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "eqpGrp": "PLT2-PRC2-LN1-EQ2",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT2-PRC2-LN1-EQ2-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC2-LN1-EQ2-U1-PLC27",
+                                                    "plcNm": "테스트27",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT2-PRC2-LN1-EQ2-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC2-LN1-EQ2-U2-PLC28",
+                                                    "plcNm": "테스트28",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "line": "PLT2-PRC2-LN2",
+                            "eqpGrpList": [
+                                {
+                                    "eqpGrp": "PLT2-PRC2-LN2-EQ1",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT2-PRC2-LN2-EQ1-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC2-LN2-EQ1-U1-PLC29",
+                                                    "plcNm": "테스트29",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT2-PRC2-LN2-EQ1-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC2-LN2-EQ1-U2-PLC30",
+                                                    "plcNm": "테스트30",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "eqpGrp": "PLT2-PRC2-LN2-EQ2",
+                                    "unitList": [
+                                        {
+                                            "unit": "PLT2-PRC2-LN2-EQ2-U1",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC2-LN2-EQ2-U1-PLC31",
+                                                    "plcNm": "테스트31",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "unit": "PLT2-PRC2-LN2-EQ2-U2",
+                                            "info": [
+                                                {
+                                                    "plcId": "PLT2-PRC2-LN2-EQ2-U2-PLC32",
+                                                    "plcNm": "테스트32",
+                                                    "regDt": "2025-10-18T03:35:44.214411",
+                                                    "regUsr": "tester"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
