@@ -3,7 +3,7 @@
 import logging
 from typing import List, Optional
 
-from ai_backend.database.crud.plc_crud import PlcCrud
+from ai_backend.database.crud.plc_crud import PlcCRUD
 from ai_backend.types.response.exceptions import HandledException
 from ai_backend.types.response.response_code import ResponseCode
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ class PlcService:
             raise ValueError("Database session is required")
         
         self.db = db
-        self.plc_crud = PlcCrud(db)
+        self.plc_crud = PlcCRUD(db)
     
     def create_plc(
         self,
@@ -34,17 +34,19 @@ class PlcService:
     ):
         """PLC 생성"""
         try:
+            # PlcCRUD 사용
+
             # PLC ID 중복 체크 (삭제된 것 포함)
             existing_plc = self.plc_crud.get_plc_include_deleted(plc_id)
             if existing_plc:
                 if existing_plc.is_active:
                     raise HandledException(
-                        ResponseCode.USER_ALREADY_EXISTS,  # PLC_ALREADY_EXISTS로 변경 권장
+                        ResponseCode.PLC_ALREADY_EXISTS,
                         msg=f"PLC ID {plc_id}는 이미 사용 중입니다."
                     )
                 else:
                     raise HandledException(
-                        ResponseCode.USER_ALREADY_EXISTS,
+                        ResponseCode.PLC_ALREADY_EXISTS,
                         msg=f"PLC ID {plc_id}는 삭제된 상태입니다. 복원을 사용하세요."
                     )
             
@@ -59,9 +61,11 @@ class PlcService:
                 create_user=create_user
             )
             return plc
+        
         except HandledException:
-            raise
+            raise  # HandledException은 그대로 전파
         except Exception as e:
+            # Service Layer에서는 구체적인 예외 타입을 모르므로 일반적인 오류로 처리
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
     
     def get_plc(self, plc_id: str, include_deleted: bool = False):
@@ -73,7 +77,7 @@ class PlcService:
                 plc = self.plc_crud.get_plc(plc_id)
             
             if not plc:
-                raise HandledException(ResponseCode.USER_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
+                raise HandledException(ResponseCode.PLC_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
             
             return plc
         except HandledException:
@@ -135,37 +139,39 @@ class PlcService:
                 update_user=update_user
             )
             if not plc:
-                raise HandledException(ResponseCode.USER_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
+                raise HandledException(ResponseCode.PLC_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
             
             return plc
         except HandledException:
-            raise
+            raise  # HandledException은 그대로 전파
         except Exception as e:
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
     
     def delete_plc(self, plc_id: str):
         """PLC 삭제 (소프트 삭제)"""
         try:
+            # PlcCRUD 사용
             success = self.plc_crud.delete_plc(plc_id)
             if not success:
-                raise HandledException(ResponseCode.USER_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
+                raise HandledException(ResponseCode.PLC_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
             
             return True
         except HandledException:
-            raise
+            raise  # HandledException은 그대로 전파
         except Exception as e:
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
     
     def restore_plc(self, plc_id: str):
         """PLC 복원"""
         try:
+            # PlcCRUD 사용
             success = self.plc_crud.restore_plc(plc_id)
             if not success:
-                raise HandledException(ResponseCode.USER_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
+                raise HandledException(ResponseCode.PLC_NOT_FOUND, msg="PLC를 찾을 수 없습니다.")
             
             return True
         except HandledException:
-            raise
+            raise  # HandledException은 그대로 전파
         except Exception as e:
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
     
@@ -174,7 +180,7 @@ class PlcService:
         try:
             return self.plc_crud.exists_plc(plc_id)
         except HandledException:
-            raise
+            raise  # HandledException은 그대로 전파
         except Exception as e:
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
     
@@ -233,7 +239,7 @@ class PlcService:
         except Exception as e:
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
     
-    # ========== ✨ 프로그램 매핑 관련 메서드 ==========
+    # ========== PLC-PGM 매핑 관련 메서드 ==========
     
     def map_program_to_plc(
         self,
@@ -339,7 +345,7 @@ class PlcService:
         except Exception as e:
             raise HandledException(ResponseCode.UNDEFINED_ERROR, e=e)
     
-    # ========== ✨ 계층 구조 조회 메서드 ==========
+    # ========== PLC 계층 구조 조회 메서드 ==========
     
     def get_plc_hierarchy(
         self,
@@ -414,7 +420,8 @@ class PlcService:
                 "plcId": plc.plc_id,
                 "plcNm": plc.plc_name,
                 "regDt": plc.create_dt.isoformat() if plc.create_dt else None,
-                "regUsr": plc.create_user or "unknown"
+                "regUsr": plc.create_user or "unknown",
+                "pgmId": plc.pgm_id or None
             })
         
         # 딕셔너리를 Response 모델로 변환

@@ -63,5 +63,7 @@
     },
     "terminal.integrated.env.windows": {
         "PYTHONPATH": "${workspaceFolder};${workspaceFolder}\\shared_core;${workspaceFolder}\\chat-api\\app\\backend;${workspaceFolder}\\doc-processor"
-    }
+    },
+    "flake8.args": [ "--ignore=E501"],
+
 }

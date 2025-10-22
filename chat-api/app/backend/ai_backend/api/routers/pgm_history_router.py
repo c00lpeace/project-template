@@ -25,7 +25,7 @@ def get_plc_mapping_history(
     limit: int = Query(50, ge=1, le=100, description="조회할 개수"),
     history_service: PgmHistoryService = Depends(get_pgm_history_service)
 ):
-    """특정 PLC의 매핑 변경 이력을 조회합니다."""
+    """특정 PLC의 매핑 변경 이력을 조회"""
     histories, total = history_service.get_histories_by_plc(
         plc_id=plc_id,
         skip=skip,
@@ -34,7 +34,7 @@ def get_plc_mapping_history(
     
     return MappingHistoryResponse(
         total=total,
-        items=[MappingHistoryItemResponse.model_validate(h) for h in histories]
+        items=[MappingHistoryItemResponse.from_orm(h) for h in histories]
     )
 
 
@@ -45,7 +45,7 @@ def get_program_mapping_history(
     limit: int = Query(50, ge=1, le=100, description="조회할 개수"),
     history_service: PgmHistoryService = Depends(get_pgm_history_service)
 ):
-    """특정 프로그램의 매핑 이력을 조회합니다."""
+    """특정 프로그램의 매핑 이력을 조회"""
     histories, total = history_service.get_histories_by_program(
         pgm_id=pgm_id,
         skip=skip,
@@ -54,7 +54,7 @@ def get_program_mapping_history(
     
     return MappingHistoryResponse(
         total=total,
-        items=[MappingHistoryItemResponse.model_validate(h) for h in histories]
+        items=[MappingHistoryItemResponse.from_orm(h) for h in histories]
     )
 
 
@@ -65,7 +65,7 @@ def get_user_mapping_history(
     limit: int = Query(50, ge=1, le=100, description="조회할 개수"),
     history_service: PgmHistoryService = Depends(get_pgm_history_service)
 ):
-    """특정 사용자의 매핑 이력을 조회합니다."""
+    """특정 사용자의 매핑 이력을 조회"""
     histories, total = history_service.get_histories_by_user(
         action_user=action_user,
         skip=skip,
@@ -74,7 +74,7 @@ def get_user_mapping_history(
     
     return MappingHistoryResponse(
         total=total,
-        items=[MappingHistoryItemResponse.model_validate(h) for h in histories]
+        items=[MappingHistoryItemResponse.from_orm(h) for h in histories]
     )
 
 
@@ -85,7 +85,7 @@ def get_recent_mapping_history(
     action: Optional[str] = Query(None, description="액션 필터 (CREATE, UPDATE, DELETE, RESTORE)"),
     history_service: PgmHistoryService = Depends(get_pgm_history_service)
 ):
-    """최근 매핑 변경 이력을 조회합니다."""
+    """최근 매핑 변경 이력을 조회"""
     action_enum = None
     if action:
         try:
@@ -101,7 +101,7 @@ def get_recent_mapping_history(
     
     return MappingHistoryResponse(
         total=total,
-        items=[MappingHistoryItemResponse.model_validate(h) for h in histories]
+        items=[MappingHistoryItemResponse.from_orm(h) for h in histories]
     )
 
 
@@ -110,7 +110,7 @@ def get_plc_history_stats(
     plc_id: str,
     history_service: PgmHistoryService = Depends(get_pgm_history_service)
 ):
-    """특정 PLC의 매핑 이력 통계를 조회합니다."""
+    """특정 PLC의 매핑 이력 통계를 조회"""
     stats = history_service.get_history_stats_by_plc(plc_id)
     return MappingHistoryStatsResponse(**stats)
 
@@ -120,6 +120,6 @@ def get_mapping_history(
     history_id: int,
     history_service: PgmHistoryService = Depends(get_pgm_history_service)
 ):
-    """이력 ID로 특정 매핑 이력을 조회합니다."""
+    """이력 ID로 특정 매핑 이력을 조회"""
     history = history_service.get_history_by_id(history_id)
-    return MappingHistoryItemResponse.model_validate(history)
+    return MappingHistoryItemResponse.from_orm(history)

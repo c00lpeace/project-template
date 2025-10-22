@@ -16,75 +16,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["template-management"])
 
 
-@router.get("/templates/{pgm_id}", response_model=TemplateTreeResponse)
-def get_template_tree(
-    pgm_id: str,
-    template_service: TemplateService = Depends(get_template_service)
-):
-    """프로그램별 템플릿 트리 구조 조회
-    
-    Args:
-        pgm_id: 프로그램 ID
-        
-    Returns:
-        TemplateTreeResponse: 폴더/서브폴더/로직 계층 구조
-    """
-    result = template_service.get_template_tree(pgm_id)
-    return result
-
-
-@router.get("/templates", response_model=TemplateListResponse)
-def get_template_list(
-    pgm_id: Optional[str] = Query(None, description="프로그램 ID 필터"),
-    folder_id: Optional[str] = Query(None, description="폴더 ID 필터"),
-    logic_name: Optional[str] = Query(None, description="로직명 검색어"),
-    page: int = Query(1, ge=1, description="페이지 번호"),
-    page_size: int = Query(100, ge=1, le=1000, description="페이지 크기"),
-    template_service: TemplateService = Depends(get_template_service)
-):
-    """템플릿 목록 조회 (검색, 페이징)
-    
-    Args:
-        pgm_id: 프로그램 ID (선택)
-        folder_id: 폴더 ID (선택)
-        logic_name: 로직명 검색어 (선택)
-        page: 페이지 번호
-        page_size: 페이지 크기
-        
-    Returns:
-        TemplateListResponse: 템플릿 목록
-    """
-    result = template_service.get_template_list(
-        pgm_id=pgm_id,
-        folder_id=folder_id,
-        logic_name=logic_name,
-        page=page,
-        page_size=page_size
-    )
-    return result
-
-
-@router.delete("/templates/{pgm_id}")
-def delete_template(
-    pgm_id: str,
-    template_service: TemplateService = Depends(get_template_service)
-):
-    """프로그램별 템플릿 삭제
-    
-    Args:
-        pgm_id: 프로그램 ID
-        
-    Returns:
-        삭제 결과
-    """
-    result = template_service.delete_template(pgm_id)
-    return {
-        "status": "success",
-        "message": f"프로그램 {pgm_id}의 템플릿이 삭제되었습니다.",
-        "data": result
-    }
-
-
 @router.get("/templates-summary", response_model=TemplateStatsResponse)
 def get_template_stats(
     template_service: TemplateService = Depends(get_template_service)
@@ -127,4 +58,73 @@ def get_template_count(
             "pgm_id": pgm_id,
             "template_count": count
         }
+    }
+
+
+@router.get("/templates", response_model=TemplateListResponse)
+def get_template_list(
+    pgm_id: Optional[str] = Query(None, description="프로그램 ID 필터"),
+    folder_id: Optional[str] = Query(None, description="폴더 ID 필터"),
+    logic_name: Optional[str] = Query(None, description="로직명 검색어"),
+    page: int = Query(1, ge=1, description="페이지 번호"),
+    page_size: int = Query(100, ge=1, le=1000, description="페이지 크기"),
+    template_service: TemplateService = Depends(get_template_service)
+):
+    """템플릿 목록 조회 (검색, 페이징)
+    
+    Args:
+        pgm_id: 프로그램 ID (선택)
+        folder_id: 폴더 ID (선택)
+        logic_name: 로직명 검색어 (선택)
+        page: 페이지 번호
+        page_size: 페이지 크기
+        
+    Returns:
+        TemplateListResponse: 템플릿 목록
+    """
+    result = template_service.get_template_list(
+        pgm_id=pgm_id,
+        folder_id=folder_id,
+        logic_name=logic_name,
+        page=page,
+        page_size=page_size
+    )
+    return result
+
+
+@router.get("/templates/{pgm_id}", response_model=TemplateTreeResponse)
+def get_template_tree(
+    pgm_id: str,
+    template_service: TemplateService = Depends(get_template_service)
+):
+    """프로그램별 템플릿 트리 구조 조회
+    
+    Args:
+        pgm_id: 프로그램 ID
+        
+    Returns:
+        TemplateTreeResponse: 폴더/서브폴더/로직 계층 구조
+    """
+    result = template_service.get_template_tree(pgm_id)
+    return result
+
+
+@router.delete("/templates/{pgm_id}")
+def delete_template(
+    pgm_id: str,
+    template_service: TemplateService = Depends(get_template_service)
+):
+    """프로그램별 템플릿 삭제
+    
+    Args:
+        pgm_id: 프로그램 ID
+        
+    Returns:
+        삭제 결과
+    """
+    result = template_service.delete_template(pgm_id)
+    return {
+        "status": "success",
+        "message": f"프로그램 {pgm_id}의 템플릿이 삭제되었습니다.",
+        "data": result
     }

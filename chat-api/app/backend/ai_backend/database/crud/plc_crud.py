@@ -18,14 +18,12 @@ from sqlalchemy.orm import Session
 logger = logging.getLogger(__name__)
 
 
-class PlcCrud:
+class PlcCRUD:
     """PLC 관련 CRUD 작업을 처리하는 클래스"""
     
     def __init__(self, db: Session):
         self.db = db
-    
-    # ========== 기존 PLC CRUD 메서드들 (변경 없음) ==========
-    
+            
     def create_plc(
         self,
         plc_id: str,
@@ -58,7 +56,7 @@ class PlcCrud:
         except IntegrityError as e:
             self.db.rollback()
             logger.error(f"PLC 생성 실패 (중복 키): {str(e)}")
-            raise HandledException(ResponseCode.DATABASE_INTEGRITY_ERROR, e=e)
+            raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
         except Exception as e:
             self.db.rollback()
             logger.error(f"PLC 생성 실패: {str(e)}")
@@ -230,7 +228,7 @@ class PlcCrud:
         limit: int = 100,
         is_active: Optional[bool] = True
     ) -> List[PLCMaster]:
-        """PLC 검색 (PLC_ID, PLC_NAME)"""
+        """PLC 검색 (PLC_ID 또는 PLC_NAME)"""
         try:
             query = self.db.query(PLCMaster)
             
@@ -294,7 +292,7 @@ class PlcCrud:
             logger.error(f"고유 값 조회 실패: {str(e)}")
             raise HandledException(ResponseCode.DATABASE_QUERY_ERROR, e=e)
     
-    # ========== ✨ 새로 추가된 프로그램 매핑 메서드들 ==========
+    # ========== PLC-PGM 매핑 메서드 ==========
     
     def map_program(
         self,
@@ -312,7 +310,7 @@ class PlcCrud:
             plc = self.get_plc(plc_id)
             if not plc:
                 raise HandledException(
-                    ResponseCode.USER_NOT_FOUND, 
+                    ResponseCode.PLC_NOT_FOUND, 
                     msg=f"PLC '{plc_id}'를 찾을 수 없습니다."
                 )
             
@@ -366,13 +364,13 @@ class PlcCrud:
             plc = self.get_plc(plc_id)
             if not plc:
                 raise HandledException(
-                    ResponseCode.USER_NOT_FOUND,
+                    ResponseCode.PLC_NOT_FOUND,
                     msg=f"PLC '{plc_id}'를 찾을 수 없습니다."
                 )
             
             if not plc.pgm_id:
                 raise HandledException(
-                    ResponseCode.INVALID_REQUEST,
+                    ResponseCode.MAPPING_NOT_FOUND,
                     msg="매핑된 프로그램이 없습니다."
                 )
             

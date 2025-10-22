@@ -85,7 +85,7 @@ class PlcHierarchyRequest(BaseModel):
         return v
 
 
-# ========== ✨ 프로그램 매핑 관련 Request ==========
+# ========== 프로그램 매핑 관련 Request ==========
 
 class MapProgramRequest(BaseModel):
     """프로그램 매핑 요청"""

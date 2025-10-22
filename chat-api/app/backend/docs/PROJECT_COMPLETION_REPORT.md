@@ -10,8 +10,8 @@
 ### ✅ 구현 완료 항목
 
 #### 1. **Backend API (100% 완료)**
-- ✅ `plc_router.py` - `get_plc_tree()` 엔드포인트 추가
-- ✅ `plc_service.py` - `get_plc_tree()` 메서드 구현
+- ✅ `plc_router.py` - `get_plcs_tree()` 엔드포인트 추가
+- ✅ `plc_service.py` - `get_plcs_tree()` 메서드 구현
 - ✅ `plc_response.py` - `PlcTreeResponse` 타입 추가
 
 #### 2. **Frontend 페이지 (100% 완료)**
@@ -25,10 +25,10 @@
 #### 수정된 파일 (3개)
 ```
 1. D:\project-template\chat-api\app\backend\ai_backend\api\routers\plc_router.py
-   → get_plc_tree() 엔드포인트 추가
+   → get_plcs_tree() 엔드포인트 추가
 
 2. D:\project-template\chat-api\app\backend\ai_backend\api\services\plc_service.py
-   → get_plc_tree() 메서드 추가
+   → get_plcs_tree() 메서드 추가
 
 3. D:\project-template\chat-api\app\backend\ai_backend\types\response\plc_response.py
    → PlcTreeResponse 클래스 추가
@@ -111,7 +111,7 @@ curl "http://localhost:8000/v1/plcs/tree?is_active=true"
 #### 1. plc_router.py
 ```python
 @router.get("/plcs/tree", response_model=PlcTreeResponse)
-def get_plc_tree(
+def get_plcs_tree(
     is_active: bool = True,
     service: PlcService = Depends(get_plc_service)
 ) -> PlcTreeResponse:
@@ -121,7 +121,7 @@ def get_plc_tree(
     - is_active: 활성 PLC만 조회 (기본값: true)
     - 통계 정보 포함 (total_count, filtered_count, timestamp)
     """
-    return service.get_plc_tree(is_active=is_active)
+    return service.get_plcs_tree(is_active=is_active)
 ```
 
 **특징:**
@@ -132,7 +132,7 @@ def get_plc_tree(
 
 #### 2. plc_service.py
 ```python
-def get_plc_tree(self, is_active: bool = True) -> PlcTreeResponse:
+def get_plcs_tree(self, is_active: bool = True) -> PlcTreeResponse:
     """
     PLC 계층 구조를 트리 형태로 조회
     
@@ -345,7 +345,7 @@ http://localhost:8000/docs
 #### 1. 기존 코드 재사용
 ```python
 # 기존 메서드 활용
-def get_plc_tree(self, is_active: bool = True):
+def get_plcs_tree(self, is_active: bool = True):
     plc_list = self.get_plcs(is_active=is_active, skip=0, limit=10000)
     hierarchy = self._build_hierarchy(plc_list)
     plant_list = self._convert_to_response(hierarchy)
@@ -395,8 +395,8 @@ datetime.now(timezone.utc)
 
 ### ✅ 완료 체크리스트
 
-- [x] plc_router.py에 get_plc_tree() 추가
-- [x] plc_service.py에 get_plc_tree() 구현
+- [x] plc_router.py에 get_plcs_tree() 추가
+- [x] plc_service.py에 get_plcs_tree() 구현
 - [x] plc_response.py에 PlcTreeResponse 추가
 - [x] plc-tree.html 생성
 - [x] main.py에 /plc-tree 경로 추가
@@ -436,7 +436,7 @@ ai_backend/api/services/plc_service.py
   - _convert_to_response() 메서드 수정
 
 ai_backend/api/routers/plc_router.py
-  - get_plc_tree() docstring 업데이트
+  - get_plcs_tree() docstring 업데이트
 ```
 
 **2. 응답 구조 변경사항**

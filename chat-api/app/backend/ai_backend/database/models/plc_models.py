@@ -18,7 +18,7 @@ class PLCMaster(Base):
     unit = Column('UNIT', String(100), nullable=False)  # 호기
     plc_name = Column('PLC_NAME', String(200), nullable=False)  # PLC 명칭
     
-    # ✨ 프로그램 매핑 정보 (현재 상태) - 추가된 부분
+    # 프로그램 매핑 정보 (현재 상태) - 추가된 부분
     pgm_id = Column('PGM_ID', String(50), nullable=True)  # 현재 매핑된 프로그램 ID
     pgm_mapping_dt = Column('PGM_MAPPING_DT', DateTime, nullable=True)  # 마지막 매핑 일시
     pgm_mapping_user = Column('PGM_MAPPING_USER', String(50), nullable=True)  # 마지막 매핑 사용자

@@ -6,8 +6,8 @@ from ai_backend.core.dependencies import get_program_service, get_plc_service
 from ai_backend.api.services.program_service import ProgramService
 from ai_backend.api.services.plc_service import PlcService
 from ai_backend.types.request.program_request import (
-    ProgramCreateRequest,
-    ProgramUpdateRequest,
+    CreateProgramRequest,
+    UpdateProgramRequest,
 )
 from ai_backend.types.response.program_response import (
     ProgramResponse,
@@ -25,22 +25,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["programs"])
 
 
-@router.post("/programs", response_model=ProgramResponse, status_code=201)
+@router.post("/programs", response_model=ProgramResponse)
 def create_program(
-    request: ProgramCreateRequest,
+    request: CreateProgramRequest,
     program_service: ProgramService = Depends(get_program_service)
 ):
-    """프로그램을 생성합니다."""
+    """프로그램을 생성"""
     program = program_service.create_program(
         pgm_id=request.pgm_id,
         pgm_name=request.pgm_name,
-        document_id=request.document_id,
+        ladder_doc_id=request.ladder_doc_id,
+        template_doc_id=request.template_doc_id,
         pgm_version=request.pgm_version,
         description=request.description,
         create_user=request.create_user,
         notes=request.notes
     )
-    return ProgramResponse.model_validate(program)
+    return ProgramResponse.from_orm(program)
 
 
 @router.get("/programs/{pgm_id}", response_model=ProgramResponse)
@@ -48,9 +49,9 @@ def get_program(
     pgm_id: str,
     program_service: ProgramService = Depends(get_program_service)
 ):
-    """프로그램 ID로 프로그램을 조회합니다."""
+    """프로그램을 조회 (PGM_ID)"""
     program = program_service.get_program(pgm_id)
-    return ProgramResponse.model_validate(program)
+    return ProgramResponse.from_orm(program)
 
 
 @router.get("/programs", response_model=ProgramListResponse)
@@ -61,9 +62,9 @@ def get_programs(
     pgm_version: Optional[str] = Query(None, description="프로그램 버전 필터"),
     program_service: ProgramService = Depends(get_program_service)
 ):
-    """프로그램 목록을 조회합니다."""
+    """프로그램 목록을 조회"""
     skip = (page - 1) * page_size
-    programs, total = program_service.get_programs(
+    programs, total_count = program_service.get_programs(
         skip=skip,
         limit=page_size,
         search=search,
@@ -71,8 +72,8 @@ def get_programs(
     )
     
     return ProgramListResponse(
-        items=[ProgramResponse.model_validate(p) for p in programs],
-        total=total,
+        items=[ProgramResponse.from_orm(p) for p in programs],
+        total_count=total_count,
         page=page,
         page_size=page_size
     )
@@ -81,20 +82,21 @@ def get_programs(
 @router.put("/programs/{pgm_id}", response_model=ProgramResponse)
 def update_program(
     pgm_id: str,
-    request: ProgramUpdateRequest,
+    request: UpdateProgramRequest,
     program_service: ProgramService = Depends(get_program_service)
 ):
-    """프로그램을 수정합니다."""
+    """프로그램을 수정"""
     program = program_service.update_program(
         pgm_id=pgm_id,
         pgm_name=request.pgm_name,
-        document_id=request.document_id,
+        ladder_doc_id=request.ladder_doc_id,
+        template_doc_id=request.template_doc_id,
         pgm_version=request.pgm_version,
         description=request.description,
         notes=request.notes,
         update_user=request.update_user
     )
-    return ProgramResponse.model_validate(program)
+    return ProgramResponse.from_orm(program)
 
 
 @router.delete("/programs/{pgm_id}", response_model=ProgramDeleteResponse)
@@ -102,7 +104,7 @@ def delete_program(
     pgm_id: str,
     program_service: ProgramService = Depends(get_program_service)
 ):
-    """프로그램을 삭제합니다."""
+    """프로그램을 삭제"""
     program_service.delete_program(pgm_id)
     
     return ProgramDeleteResponse(
@@ -111,7 +113,7 @@ def delete_program(
     )
 
 
-# ========== ✨ 프로그램별 매핑 PLC 조회 API ==========
+# ========== 프로그램별 매핑 PLC 조회 API ==========
 
 @router.get("/programs/{pgm_id}/plcs", response_model=PlcsByProgramResponse)
 def get_plcs_by_program(
@@ -121,11 +123,11 @@ def get_plcs_by_program(
     plc_service: PlcService = Depends(get_plc_service)
 ):
     """
-    특정 프로그램에 매핑된 PLC 목록을 조회합니다.
+    특정 프로그램에 매핑된 PLC 목록을 조회
     
-    이 엔드포인트는 해당 프로그램을 사용하는 모든 PLC를 조회합니다.
+    해당 프로그램을 사용하는 모든 PLC를 조회
     """
-    plcs, total = plc_service.get_plcs_by_program(
+    plcs, total_count = plc_service.get_plcs_by_program(
         pgm_id=pgm_id,
         skip=skip,
         limit=limit
@@ -133,6 +135,6 @@ def get_plcs_by_program(
     
     return PlcsByProgramResponse(
         pgm_id=pgm_id,
-        total=total,
-        items=[PlcWithMappingResponse.model_validate(plc) for plc in plcs]
+        total_count=total_count,
+        items=[PlcWithMappingResponse.from_orm(plc) for plc in plcs]
     )

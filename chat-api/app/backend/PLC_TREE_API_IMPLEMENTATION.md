@@ -96,7 +96,7 @@ GET /v1/plcs/tree?is_active=true
 ### 2. Router (plc_router.py)
 ```python
 @router.get("/plcs/tree")
-def get_plc_tree(
+def get_plcs_tree(
     is_active: bool = Query(True),
     plc_service: PlcService = Depends(get_plc_service)
 ):

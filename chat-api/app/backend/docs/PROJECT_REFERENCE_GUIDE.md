@@ -173,7 +173,7 @@ Response: 성공 메시지 + 파싱 결과
 ```
 Client → GET /v1/plcs/tree?is_active=true
     ↓
-plc_router.get_plc_tree(is_active)
+plc_router.get_plcs_tree(is_active)
     ↓
 plc_service.get_plc_hierarchy(is_active)
     ├─ plc_service.get_plcs(is_active) 재사용
@@ -434,12 +434,12 @@ POST /v1/upload (document_type="pgm_template")
 
 **구현 완료된 컴포넌트:**
 ```
-1. ✅ plc_router.py - get_plc_tree() 엔드포인트
+1. ✅ plc_router.py - get_plcs_tree() 엔드포인트
    - GET /v1/plcs/tree?is_active=true
    - PlcTreeResponse 반환
    - 계층 구조 트리 조회
 
-2. ✅ plc_service.py - get_plc_tree() 메서드
+2. ✅ plc_service.py - get_plcs_tree() 메서드
    - PLC 목록 조회 후 계층 구조 변환
    - 통계 정보 포함 (total_count, filtered_count)
    - timestamp 추가
@@ -542,7 +542,7 @@ POST /v1/upload (document_type="pgm_template")
      • List 접미사 일관성 적용
 
 2. ✅ plc_router.py 수정
-   - get_plc_tree() API docstring 업데이트
+   - get_plcs_tree() API docstring 업데이트
    - 새로운 응답 구조 예시 추가
 
 3. ✅ 응답 구조 변경사항 (AS-IS → TO-BE)

@@ -89,7 +89,7 @@ class PlcHierarchyResponse(BaseModel):
     values: List[str] = Field(..., description="고유 값 목록")
 
 
-# ========== ✨ 프로그램 매핑 관련 Response ==========
+# ========== 프로그램 매핑 관련 Response ==========
 
 class PlcWithMappingResponse(BaseModel):
     """PLC 매핑 정보 포함 응답"""

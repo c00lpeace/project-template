@@ -164,7 +164,7 @@ PLC 계층 구조 트리 조회 API (`GET /v1/plcs/tree`)의 응답 구조를 �
 ### 2. `ai_backend/api/routers/plc_router.py`
 
 **수정된 부분:**
-- `get_plc_tree()` API docstring 업데이트 (새 응답 구조 반영)
+- `get_plcs_tree()` API docstring 업데이트 (새 응답 구조 반영)
 
 ### 3. `docs/PROJECT_REFERENCE_GUIDE.md`
 
