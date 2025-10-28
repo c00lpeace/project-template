@@ -123,10 +123,6 @@ class DocumentService:
             # 파일 저장 (S3 또는 로컬)
             file_key = self._generate_file_key(user_id, filename)
             
-            # 메타데이터 준비 (additional_metadata 복사)
-            # metadata_json = dict(additional_metadata)  # ⭐ 복사본 생성
-            metadata_json = additional_metadata
-            
             if self.storage_type == "s3":
                 # S3 저장
                 s3_key = f"{self.s3_prefix}{file_key}"
@@ -136,9 +132,9 @@ class DocumentService:
                     content_type=file_type
                 )
                 upload_path = s3_url  # S3 URL을 upload_path로 저장
-                metadata_json['s3_key'] = s3_key  # ⭐ metadata_json에 추가
-                metadata_json['s3_url'] = s3_url  # ⭐ metadata_json에 추가
-                metadata_json['storage_type'] = 's3'  # ⭐ metadata_json에 추가
+                additional_metadata['s3_key'] = s3_key
+                additional_metadata['s3_url'] = s3_url
+                additional_metadata['storage_type'] = 's3'
                 logger.info(f"✅ S3 저장 완료: {s3_url}")
             else:
                 # 로컬 저장 (기존 로직)
@@ -147,7 +143,7 @@ class DocumentService:
                 with open(upload_path, "wb") as f:
                     f.write(file_content)
                 upload_path = str(upload_path)
-                metadata_json['storage_type'] = 'local'  # ⭐ metadata_json에 추가
+                additional_metadata['storage_type'] = 'local'
                 logger.info(f"✅ 로컬 저장 완료: {upload_path}")
 
             # DB에 메타데이터 저장
@@ -167,7 +163,7 @@ class DocumentService:
                     status="completed",
                     permissions=permissions,
                     document_type=document_type,
-                    **metadata_json,  # ⭐ metadata_json으로 전달
+                    **additional_metadata,
                 )
                 document = self.document_crud.get_document(document_id)
             else:
@@ -187,7 +183,7 @@ class DocumentService:
                     status="completed",
                     permissions=permissions,
                     document_type=document_type,
-                    metadata_json=metadata_json  # ⭐ metadata_json으로 전달
+                    **additional_metadata,
                 )
 
             return self._document_to_dict(document)
