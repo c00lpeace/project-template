@@ -75,7 +75,9 @@ INSERT INTO "PLC_MASTER"
 	('PLT2', 'PLT2-PRC2', 'PLT2-PRC2-LN2', 'PLT2-PRC2-LN2-EQ2', 'PLT2-PRC2-LN2-EQ2-U2', 'PLT2-PRC2-LN2-EQ2-U2-PLC32', '테스트32', true , 'tester', NOW());
 	
 --PROGRAMS 테이블 데이터 삽입
+select * from "PLC_MASTER";
 select * from "PROGRAMS";
+select * from "PGM_MAPPING_HISTORY";
 insert into	"PROGRAMS" 
 	()
 

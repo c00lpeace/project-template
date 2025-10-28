@@ -1,6 +1,6 @@
 # 🏗️ PLC-Program Mapping System - 프로젝트 참조 가이드
 
-> **최종 업데이트:** 2025-10-21 13:50:00 (화요일 오후 1시 50분)  
+> **최종 업데이트:** 2025-10-28 (화요일)  
 > **목적:** Claude가 매번 파일을 검색하지 않고 빠르게 프로젝트 구조를 파악하기 위한 참조 문서
 
 ---
@@ -23,8 +23,9 @@ ai_backend/
 │   │   ├── document_router.py    # 문서 관리 API
 │   │   ├── group_router.py       # 그룹 관리 API
 │   │   ├── pgm_history_router.py # 프로그램 매핑 이력 API
-│   │   ├── plc_router.py         # PLC 관리 API ⭐ 업데이트
+│   │   ├── plc_router.py         # PLC 관리 API
 │   │   ├── program_router.py     # 프로그램 관리 API
+│   │   ├── template_router.py    # 템플릿 관리 API
 │   │   └── user_router.py        # 사용자 관리 API
 │   │
 │   └── services/                 # Business Logic Layer
@@ -33,84 +34,271 @@ ai_backend/
 │       ├── llm_chat_service.py   # LLM 채팅 비즈니스 로직
 │       ├── llm_provider_factory.py # LLM Provider 팩토리
 │       ├── pgm_history_service.py # 매핑 이력 비즈니스 로직
-│       ├── plc_service.py        # PLC 관리 비즈니스 로직 ⭐ 업데이트
+│       ├── plc_service.py        # PLC 관리 비즈니스 로직
 │       ├── program_service.py    # 프로그램 관리 비즈니스 로직
+│       ├── template_service.py   # 템플릿 관리 비즈니스 로직
 │       └── user_service.py       # 사용자 관리 비즈니스 로직
 │
-├── database/                     # Database Layer
-│   ├── models/                   # SQLAlchemy Models
-│   │   ├── plc_models.py         # PLCMaster 모델 ⭐
-│   │   ├── program_models.py     # Program 모델
-│   │   ├── mapping_models.py     # PgmMappingHistory 모델
-│   │   └── ...
-│   │
-│   └── crud/                     # CRUD Operations
-│       ├── plc_crud.py           # PLC CRUD
-│       └── ...
+├── cache/                        # Cache Layer
+│   └── redis_client.py           # Redis 클라이언트
 │
-└── types/                        # Type Definitions (Pydantic)
-    └── response/                 # Response Models
-        ├── plc_hierarchy_response.py # ⭐ NEW: 계층 구조 응답
-        └── ...
+├── config/                       # Configuration
+│   └── simple_settings.py        # Pydantic Settings
+│
+├── core/                         # Core Components
+│   ├── dependencies.py           # 의존성 주입 (Dependency Injection)
+│   └── global_exception_handlers.py # 전역 예외 처리
+│
+├── database/                     # Database Layer
+│   ├── base.py                   # SQLAlchemy Base 설정
+│   │
+│   ├── crud/                     # CRUD Operations
+│   │   ├── chat_crud.py          # 채팅 CRUD
+│   │   ├── document_crud.py      # 문서 CRUD
+│   │   ├── group_crud.py         # 그룹 CRUD
+│   │   ├── pgm_mapping_crud.py   # 매핑 이력 CRUD
+│   │   ├── plc_crud.py           # PLC CRUD
+│   │   ├── program_crud.py       # 프로그램 CRUD
+│   │   ├── template_crud.py      # 템플릿 CRUD
+│   │   └── user_crud.py          # 사용자 CRUD
+│   │
+│   └── models/                   # SQLAlchemy Models
+│       ├── chat_models.py        # ChatHistory 모델
+│       ├── document_models.py    # Document 모델
+│       ├── group_models.py       # Group, GroupUser 모델
+│       ├── pgm_mapping_models.py # PgmMappingHistory 모델
+│       ├── plc_models.py         # PLCMaster 모델
+│       ├── program_models.py     # Program 모델
+│       ├── template_models.py    # PgmTemplate 모델
+│       └── user_models.py        # User 모델
+│
+├── middleware/                   # Middleware
+│   └── performance_middleware.py # 성능 모니터링
+│
+├── types/                        # Type Definitions (Pydantic)
+│   ├── enums/                    # Enum 정의
+│   │   ├── base.py
+│   │   └── query.py
+│   │
+│   ├── request/                  # Request Models
+│   │   ├── chat_request.py
+│   │   ├── group_request.py
+│   │   ├── plc_request.py
+│   │   ├── program_request.py
+│   │   └── user_request.py
+│   │
+│   └── response/                 # Response Models
+│       ├── base.py               # 기본 응답 구조
+│       ├── chat_response.py
+│       ├── exceptions.py         # HandledException
+│       ├── group_response.py
+│       ├── pgm_history_response.py
+│       ├── plc_response.py
+│       ├── plc_hierarchy_response.py
+│       ├── program_response.py
+│       ├── response_code.py      # ResponseCode Enum
+│       ├── template_response.py
+│       └── user_response.py
+│
+├── utils/                        # Utility Functions
+│   ├── logging_utils.py          # 로깅 유틸
+│   ├── s3_client.py              # AWS S3 클라이언트 ⭐ NEW
+│   └── uuid_gen.py               # UUID 생성
+│
+└── main.py                       # FastAPI Application Entry Point
+
 ```
 
 ---
 
-## 🔗 API 엔드포인트 (총 62개) ⚡ 업데이트
+## 🗄️ 데이터베이스 테이블
 
-### Template API (template_router.py) - 5개 ⭐ NEW
-```
-GET    /v1/templates/{pgm_id}        # 프로그램별 템플릿 트리 구조 조회
-GET    /v1/templates                 # 템플릿 목록 조회 (검색, 페이징)
-DELETE /v1/templates/{pgm_id}        # 프로그램별 템플릿 삭제
-GET    /v1/templates-summary         # 모든 프로그램 템플릿 통계
-GET    /v1/templates/count/{pgm_id}  # 프로그램별 템플릿 개수 조회
+### 1. **PLC_MASTER** (plc_models.py)
+```python
+class PLCMaster:
+    __tablename__ = "PLC_MASTER"
+    
+    # 기본 정보
+    plc_id: str                    # PRIMARY KEY
+    plant: str                     # Plant
+    process: str                   # 공정
+    line: str                      # Line
+    equipment_group: str           # 장비그룹
+    unit: str                      # 호기
+    plc_name: str                  # PLC 명칭
+    
+    # 프로그램 매핑 (현재 상태)
+    pgm_id: str                    # 현재 매핑된 프로그램 ID
+    pgm_mapping_dt: datetime       # 마지막 매핑 일시
+    pgm_mapping_user: str          # 마지막 매핑 사용자
+    
+    # 메타데이터
+    is_active: bool                # 활성 상태
+    create_dt: datetime            # 생성일시
+    create_user: str               # 생성자
+    update_dt: datetime            # 수정일시
+    update_user: str               # 수정자
 ```
 
-**특별 기능:**
+### 2. **PROGRAMS** (program_models.py)
+```python
+class Program:
+    __tablename__ = "PROGRAMS"
+    
+    pgm_id: str                    # PRIMARY KEY
+    pgm_name: str                  # 프로그램 명칭
+    document_id: str               # 문서 ID (연결)
+    pgm_version: str               # 프로그램 버전
+    description: str               # 프로그램 설명
+    create_dt: datetime            # 생성일시
+    create_user: str               # 생성자
+    update_dt: datetime            # 수정일시
+    update_user: str               # 수정자
+    notes: str                     # 비고
 ```
-• Excel 업로드는 기존 document_router 사용:
-  POST /v1/upload (document_type="pgm_template", metadata={"pgm_id": "..."})
-  
-• 자동 파싱:
-  - Excel 업로드 시 document_service가 자동으로 template_service 호출
-  - PGM_TEMPLATE 테이블에 자동 저장
-  - metadata_json에 파싱 결과 기록
+
+### 3. **PGM_MAPPING_HISTORY** (pgm_mapping_models.py)
+```python
+class PgmMappingHistory:
+    __tablename__ = "PGM_MAPPING_HISTORY"
+    
+    history_id: int                # PRIMARY KEY (AUTO_INCREMENT)
+    plc_id: str                    # PLC ID (INDEX)
+    pgm_id: str                    # 프로그램 ID
+    
+    # 이력 메타데이터
+    action: str                    # CREATE, UPDATE, DELETE, RESTORE
+    action_dt: datetime            # 액션 일시 (INDEX)
+    action_user: str               # 액션 사용자
+    prev_pgm_id: str               # 이전 프로그램 ID
+    notes: str                     # 비고
+```
+
+### 4. **DOCUMENTS** (document_models.py)
+```python
+class Document:
+    __tablename__ = "DOCUMENTS"
+    
+    document_id: str               # PRIMARY KEY
+    filename: str                  # 파일명
+    file_path: str                 # 파일 경로
+    file_size: int                 # 파일 크기
+    document_type: str             # 문서 타입
+    upload_dt: datetime            # 업로드 일시
+    user_id: str                   # 업로드 사용자
+    is_public: bool                # 공개 여부
+    metadata_json: dict            # 메타데이터 (JSON) ⭐ S3 정보 포함
+```
+
+### 5. **PGM_TEMPLATE** (template_models.py)
+```python
+class PgmTemplate:
+    __tablename__ = "PGM_TEMPLATE"
+    
+    template_id: int               # PRIMARY KEY (AUTO_INCREMENT)
+    pgm_id: str                    # 프로그램 ID (INDEX)
+    document_id: str               # 원본 문서 ID
+    folder_id: str                 # Folder ID
+    folder_name: str               # Folder 명칭
+    sub_folder_id: str             # Sub Folder ID
+    sub_folder_name: str           # Sub Folder 명칭
+    logic_id: str                  # Logic ID
+    logic_name: str                # Logic 명칭
+    description: str               # 설명
+    create_dt: datetime            # 생성일시
+```
+
+### 6. **USERS** (user_models.py)
+```python
+class User:
+    __tablename__ = "USERS"
+    
+    user_id: str                   # PRIMARY KEY
+    username: str                  # 사용자명
+    email: str                     # 이메일
+    full_name: str                 # 전체 이름
+    is_active: bool                # 활성 상태
+    create_dt: datetime            # 생성일시
+    update_dt: datetime            # 수정일시
+```
+
+### 7. **GROUPS** (group_models.py)
+```python
+class Group:
+    __tablename__ = "GROUPS"
+    
+    group_id: str                  # PRIMARY KEY
+    group_name: str                # 그룹명
+    description: str               # 설명
+    create_dt: datetime            # 생성일시
+    create_user: str               # 생성자
+
+class GroupUser:
+    __tablename__ = "GROUP_USERS"
+    
+    group_id: str                  # FOREIGN KEY
+    user_id: str                   # FOREIGN KEY
+    join_dt: datetime              # 가입일시
+```
+
+### 8. **CHAT_HISTORY** (chat_models.py)
+```python
+class ChatHistory:
+    __tablename__ = "CHAT_HISTORY"
+    
+    chat_id: str                   # PRIMARY KEY
+    user_id: str                   # 사용자 ID
+    message: str                   # 사용자 메시지
+    response: str                  # AI 응답
+    model_name: str                # 모델명
+    create_dt: datetime            # 생성일시
+    tokens_used: int               # 토큰 사용량
+```
+
+---
+
+## 🔗 API 엔드포인트 (총 62개)
+
+### Chat API (chat_router.py)
+```
+POST   /v1/chat/stream              # 스트리밍 채팅
+POST   /v1/chat                     # 일반 채팅
+GET    /v1/chat/history/{user_id}  # 채팅 이력
+```
+
+### Document API (document_router.py)
+```
+POST   /v1/upload                   # 문서 업로드 (S3/로컬 지원) ⭐
+GET    /v1/documents                # 문서 목록
+GET    /v1/documents/{document_id}  # 문서 조회
+DELETE /v1/documents/{document_id}  # 문서 삭제 (S3/로컬) ⭐
+POST   /v1/upload-zip               # ZIP 파일 업로드
+GET    /v1/zip/{document_id}/contents  # ZIP 내부 파일 목록
+GET    /v1/zip/{document_id}/extract/{file_path}  # ZIP 파일 추출
+GET    /v1/documents/{document_id}/download  # 다운로드 (S3/로컬) ⭐
 ```
 
 ### PLC API (plc_router.py) - 16개
-
-**단일 PLC 리소스 (`/plc/{plc_id}`):**
 ```
+POST   /v1/plcs                     # PLC 생성
 GET    /v1/plc/{plc_id}             # PLC 조회
+GET    /v1/plcs                     # PLC 목록 (검색, 페이징)
 PUT    /v1/plc/{plc_id}             # PLC 수정
 DELETE /v1/plc/{plc_id}             # PLC 삭제 (Soft Delete)
-POST   /v1/plc/{plc_id}/restore     # PLC 복원
-GET    /v1/plc/{plc_id}/exists      # PLC 존재 여부 확인
 POST   /v1/plc/{plc_id}/mapping     # 프로그램 매핑 (UPSERT)
 DELETE /v1/plc/{plc_id}/mapping     # 매핑 해제
-GET    /v1/plc/{plc_id}/history     # PLC 매핑 이력
-```
-
-**PLC 컬렉션 리소스 (`/plcs`):**
-```
-POST   /v1/plcs                      # PLC 생성
-GET    /v1/plcs                      # PLC 목록 (검색, 페이징, 필터링)
-GET    /v1/plcs/search/keyword       # PLC 검색
-GET    /v1/plcs/count/summary        # PLC 개수 조회
-GET    /v1/plcs/hierarchy/values     # 계층별 고유 값 조회
-GET    /v1/plcs/tree                 # PLC 계층 구조 트리 조회 ⭐ NEW
-GET    /v1/plcs/unmapped/list        # 매핑되지 않은 PLC 목록
-GET    /v1/programs/{pgm_id}/plcs    # 프로그램별 매핑된 PLC 목록
+GET    /v1/plcs/tree                # 계층 구조 트리 조회
+GET    /v1/plcs/unmapped/list       # 미매핑 PLC 목록
+GET    /v1/programs/{pgm_id}/plcs   # 프로그램별 매핑된 PLC 목록
 ```
 
 ### Program API (program_router.py) - 5개
 ```
-POST   /v1/programs                  # 프로그램 생성
-GET    /v1/programs/{pgm_id}         # 프로그램 조회
-GET    /v1/programs                  # 프로그램 목록 (검색, 페이징)
-PUT    /v1/programs/{pgm_id}         # 프로그램 수정
-DELETE /v1/programs/{pgm_id}         # 프로그램 삭제
+POST   /v1/programs                 # 프로그램 생성
+GET    /v1/programs/{pgm_id}        # 프로그램 조회
+GET    /v1/programs                 # 프로그램 목록 (검색, 페이징)
+PUT    /v1/programs/{pgm_id}        # 프로그램 수정
+DELETE /v1/programs/{pgm_id}        # 프로그램 삭제
 ```
 
 ### PGM History API (pgm_history_router.py) - 6개
@@ -123,453 +311,536 @@ GET /v1/pgm-history/plc/{plc_id}/stats    # PLC 이력 통계
 GET /v1/pgm-history/{history_id}          # 특정 이력 조회
 ```
 
+### Template API (template_router.py) - 5개
+```
+GET    /v1/templates/{pgm_id}        # 프로그램별 템플릿 트리 구조 조회
+GET    /v1/templates                 # 템플릿 목록 조회 (검색, 페이징)
+DELETE /v1/templates/{pgm_id}        # 프로그램별 템플릿 삭제
+GET    /v1/templates-summary         # 모든 프로그램 템플릿 통계
+GET    /v1/templates/count/{pgm_id}  # 프로그램별 템플릿 개수 조회
+```
+
+### User API (user_router.py)
+```
+POST   /v1/users                    # 사용자 생성
+GET    /v1/users/{user_id}          # 사용자 조회
+GET    /v1/users                    # 사용자 목록
+PUT    /v1/users/{user_id}          # 사용자 수정
+DELETE /v1/users/{user_id}          # 사용자 삭제
+```
+
+### Group API (group_router.py)
+```
+POST   /v1/groups                   # 그룹 생성
+GET    /v1/groups/{group_id}        # 그룹 조회
+GET    /v1/groups                   # 그룹 목록
+PUT    /v1/groups/{group_id}        # 그룹 수정
+DELETE /v1/groups/{group_id}        # 그룹 삭제
+POST   /v1/groups/{group_id}/users  # 그룹에 사용자 추가
+DELETE /v1/groups/{group_id}/users/{user_id}  # 사용자 제거
+```
+
+### Cache API (cache_router.py)
+```
+DELETE /v1/cache/{key}              # 캐시 삭제
+DELETE /v1/cache                    # 전체 캐시 삭제
+GET    /v1/cache/stats              # 캐시 통계
+```
+
+---
+
+## 🏗️ 아키텍처 패턴
+
+### Layered Architecture
+```
+Client (HTTP)
+    ↓
+Router (FastAPI)          # API Layer - REST 엔드포인트
+    ↓
+Service                   # Business Logic Layer
+    ↓
+CRUD                      # Data Access Layer
+    ↓
+Model (SQLAlchemy)        # ORM Layer
+    ↓
+Database (MySQL)          # Database Layer
+
+Storage (로컬/S3) ⭐ NEW  # File Storage Layer
+```
+
+### 의존성 주입 (Dependency Injection)
+```python
+# dependencies.py
+
+def get_db() -> Session:
+    """데이터베이스 세션"""
+    
+def get_plc_service(db: Session) -> PlcService:
+    """PLC 서비스"""
+    
+def get_program_service(db: Session) -> ProgramService:
+    """프로그램 서비스"""
+    
+def get_pgm_history_service(db: Session) -> PgmHistoryService:
+    """매핑 이력 서비스"""
+    
+def get_template_service(db: Session) -> TemplateService:
+    """템플릿 서비스"""
+```
+
+### 에러 처리
+```python
+# exceptions.py
+
+class HandledException(Exception):
+    """API 예외 처리 기본 클래스"""
+    status_code: int
+    error_code: str
+    message: str
+
+# response_code.py
+
+class ResponseCode(Enum):
+    SUCCESS = (200, "SUCCESS", "성공")
+    NOT_FOUND = (404, "NOT_FOUND", "찾을 수 없음")
+    CONFLICT = (409, "CONFLICT", "중복")
+    # ...
+```
+
+---
+
+## 🔧 설정 파일
+
+### .env
+```bash
+# Database
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_USER=root
+DATABASE_PASSWORD=password
+DATABASE_NAME=plc_db
+
+# Redis Cache
+CACHE_ENABLED=true
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# LLM Provider
+LLM_PROVIDER=openai  # openai, anthropic
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Storage Configuration ⭐ NEW
+STORAGE_TYPE=local                    # local 또는 s3
+UPLOAD_BASE_PATH=./uploads
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=ap-northeast-2            # 서울 리전
+S3_BUCKET_NAME=plc-documents
+S3_PREFIX=uploads/                   # 버킷 내 폴더
+
+# Application
+APP_DEBUG=true
+APP_LOG_LEVEL=INFO
+SERVER_LOG_LEVEL=WARNING
+```
+
+### simple_settings.py
+```python
+class Settings(BaseSettings):
+    # Database
+    database_host: str
+    database_port: int
+    database_user: str
+    database_password: str
+    database_name: str
+    
+    # Cache
+    cache_enabled: bool
+    redis_host: str
+    redis_port: int
+    
+    # LLM
+    llm_provider: str
+    openai_api_key: str
+    anthropic_api_key: str
+    
+    # Storage (S3) ⭐ NEW
+    storage_type: str = Field(default="local", env="STORAGE_TYPE")
+    upload_base_path: str = Field(default="./uploads", env="UPLOAD_BASE_PATH")
+    aws_access_key_id: str = Field(default="", env="AWS_ACCESS_KEY_ID")
+    aws_secret_access_key: str = Field(default="", env="AWS_SECRET_ACCESS_KEY")
+    aws_region: str = Field(default="ap-northeast-2", env="AWS_REGION")
+    s3_bucket_name: str = Field(default="", env="S3_BUCKET_NAME")
+    s3_prefix: str = Field(default="uploads/", env="S3_PREFIX")
+    
+    # Application
+    app_debug: bool
+    app_log_level: str
+    server_log_level: str
+    
+    class Config:
+        env_file = ".env"
+```
+
+---
+
+## 📝 주요 패턴 및 규칙
+
+### 1. **Naming Convention**
+- **테이블명**: UPPER_SNAKE_CASE (예: `PLC_MASTER`, `PROGRAMS`)
+- **컬럼명**: UPPER_SNAKE_CASE (예: `PLC_ID`, `PGM_NAME`)
+- **파일명**: snake_case (예: `plc_router.py`, `program_service.py`)
+- **클래스명**: PascalCase (예: `PlcService`, `ProgramCrud`)
+- **함수명**: snake_case (예: `get_plc`, `create_program`)
+
+### 2. **Import Convention**
+```python
+# 절대 경로 사용
+from ai_backend.database.models.plc_models import PLCMaster
+from ai_backend.api.services.plc_service import PlcService
+from ai_backend.types.response.exceptions import HandledException
+from ai_backend.utils.s3_client import S3Client  # ⭐ NEW
+```
+
+### 3. **CRUD 메서드 패턴**
+```python
+class ExampleCrud:
+    @staticmethod
+    def create_xxx(db: Session, data: dict) -> Model
+    
+    @staticmethod
+    def get_xxx_by_id(db: Session, id: str) -> Optional[Model]
+    
+    @staticmethod
+    def get_xxx_list(db: Session, skip: int, limit: int) -> List[Model]
+    
+    @staticmethod
+    def update_xxx(db: Session, id: str, data: dict) -> Optional[Model]
+    
+    @staticmethod
+    def delete_xxx(db: Session, id: str) -> bool
+```
+
+### 4. **Service 메서드 패턴**
+```python
+class ExampleService:
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def create_xxx(...) -> Model:
+        # 1. 입력 검증
+        # 2. 비즈니스 로직
+        # 3. CRUD 호출
+        # 4. 로깅
+        # 5. 반환
+    
+    def get_xxx(...) -> Model:
+        # 1. CRUD 호출
+        # 2. 존재 여부 확인 (없으면 HandledException)
+        # 3. 반환
+```
+
+### 5. **Router 패턴**
+```python
+@router.post("/xxx", response_model=XxxResponse)
+def create_xxx(
+    request: XxxCreateRequest,
+    service: XxxService = Depends(get_xxx_service)
+):
+    result = service.create_xxx(...)
+    return XxxResponse.model_validate(result)
+```
+
 ---
 
 ## 🎯 핵심 기능 Flow
 
-### ⭐ NEW: Excel 템플릿 업로드 Flow (2025-10-19)
+### ⭐ NEW: S3 파일 업로드/다운로드 Flow (2025-10-28)
 ```
-Client
+Client → POST /v1/upload (파일 업로드)
     ↓
-1. Excel 파일 + metadata={"pgm_id": "PGM001"} 준비
+document_router.upload_document_request()
     ↓
-POST /v1/upload
-    - file: template.xlsx
-    - document_type: "pgm_template"
-    - metadata: '{"pgm_id": "PGM001"}'
+document_service.upload_document()
     ↓
-2. document_router.upload_document_request()
-    - metadata JSON 파싱: '{...}' → {'pgm_id': 'PGM001'}
+[Storage Type 체크: S3 or Local]
     ↓
-3. document_service.upload_document(metadata={'pgm_id': 'PGM001'})
-    ├─ create_document_from_file() 호출
-    ├─ DOCUMENTS 테이블에 저장
-    │   - METADATA_JSON: '{"pgm_id": "PGM001"}'
-    │   - DOCUMENT_ID: "doc-uuid-123"
-    └─ document_type == "pgm_template" 체크
+if storage_type == "s3":
+    S3Client.upload_file() → S3 버킷에 업로드
+    DOCUMENTS.metadata_json에 s3_key, s3_url 저장
+else:
+    로컬 파일 시스템에 저장
+    
+---
+
+Client → GET /v1/documents/{document_id}/download
     ↓
-4. document_service (pgm_id 추출)
-    - result['metadata_json']['pgm_id'] → 'PGM001'
+document_router.download_document()
     ↓
-5. template_service.parse_and_save()
-    ├─ pgm_id='PGM001' 전달
-    ├─ pd.read_excel() - Excel 읽기
-    ├─ 필수 컬럼 검증 (PGM ID, Folder ID, Logic ID)
-    ├─ 데이터 변환 (dict 리스트)
-    ├─ 기존 템플릿 삭제 (PGM_ID='PGM001')
-    └─ template_crud.bulk_create()
+document_service.download_document()
     ↓
-6. PGM_TEMPLATE 테이블에 Bulk INSERT
-    - 각 행마다 PGM_ID='PGM001' 저장
-    - DOCUMENT_ID='doc-uuid-123' 연결
+[metadata_json에서 storage_type 확인]
     ↓
-7. DOCUMENTS 테이블 metadata 업데이트
-    - template_parse_result 추가
+if storage_type == "s3":
+    S3Client.download_file(s3_key) → S3에서 다운로드
+else:
+    로컬 파일 시스템에서 읽기
     ↓
-Response: 성공 메시지 + 파싱 결과
+Response: StreamingResponse (파일 스트림)
 ```
 
-### ⭐ PLC 계층 구조 트리 조회 Flow (업데이트: 2025-10-21)
+### 1. **PLC-프로그램 매핑 Flow**
 ```
-Client → GET /v1/plcs/tree?is_active=true
+Client → POST /v1/plc/{plc_id}/mapping
     ↓
-plc_router.get_plcs_tree(is_active)
+plc_router.upsert_plc_program_mapping()
     ↓
-plc_service.get_plc_hierarchy(is_active)
-    ├─ plc_service.get_plcs(is_active) 재사용
-    │  └─ plc_crud.get_plcs() → PLC_MASTER 전체 조회
-    ├─ _build_hierarchy() 계층 구조 변환
-    │  └─ Plant → Process → Line → Equipment Group → Unit
-    │      └─ Unit 내부에 info 배열 생성 ⭐
-    └─ _convert_to_response() Response 형식 변환
-        └─ 키 이름 축약 (plant→plt, processes→procList 등) ⭐
+plc_service.upsert_program_mapping()
+    ↓
+plc_crud.update_program_mapping()  # PLC_MASTER.pgm_id 업데이트
+    ↓
+mapping_crud.create_history()      # PGM_MAPPING_HISTORY 기록
+```
 
-Response (TO-BE 구조):
-{
-  "data": [
-    {
-      "plt": "PLT1",
-      "procList": [
-        {
-          "proc": "PLT1-PRC1",
-          "lineList": [
-            {
-              "line": "PLT1-PRC1-LN1",
-              "eqGrpList": [
-                {
-                  "eqGrp": "PLT1-PRC1-LN1-EQ1",
-                  "unitList": [
-                    {
-                      "unit": "PLT1-PRC1-LN1-EQ1-U1",
-                      "info": [  ← info 배열로 감쌈 ⭐
-                        {
-                          "plc_id": "PLT1-PRC1-LN1-EQ1-U1-PLC01",
-                          "create_dt": "2025-10-18T03:35:44.214411",
-                          "user": "tester"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
+### 2. **프로그램 생성 Flow**
+```
+Client → POST /v1/programs
+    ↓
+program_router.create_program()
+    ↓
+program_service.create_program()
+    ↓
+program_crud.create_program()      # PROGRAMS 테이블에 INSERT
+```
+
+### 3. **매핑 이력 조회 Flow**
+```
+Client → GET /v1/pgm-history/plc/{plc_id}
+    ↓
+pgm_history_router.get_plc_mapping_history()
+    ↓
+pgm_history_service.get_histories_by_plc()
+    ↓
+mapping_crud.get_histories_by_plc()  # PGM_MAPPING_HISTORY 조회
+```
+
+### 4. **Excel 템플릿 업로드 Flow**
+```
+Client → POST /v1/upload (document_type="pgm_template")
+    ↓
+document_router.upload_document_request()
+    ↓
+document_service.upload_document()
+    ↓
+document_service.create_document_from_file() → DOCUMENTS 저장
+    ↓
+template_service.parse_and_save() → Excel 파싱
+    ↓
+template_crud.bulk_create() → PGM_TEMPLATE Bulk Insert
 ```
 
 ---
 
-## 🗄️ 주요 테이블
+## 🚀 개발 가이드
 
-### PLC_MASTER (⭐ 업데이트됨 - 2025-10-17)
-```python
-plc_id: str                    # PRIMARY KEY
-plant: str                     # Plant (계층 1단계)
-process: str                   # 공정 (계층 2단계)
-line: str                      # Line (계층 3단계)
-equipment_group: str           # 장비그룹 (계층 4단계)
-unit: str                      # 호기 (계층 5단계)
-plc_name: str                  # PLC 명칭
+### 새로운 기능 추가 시
+1. **Model 생성** (`database/models/`)
+2. **CRUD 생성** (`database/crud/`)
+3. **Request/Response 타입 생성** (`types/request/`, `types/response/`)
+4. **Service 생성** (`api/services/`)
+5. **Router 생성** (`api/routers/`)
+6. **Dependency 등록** (`core/dependencies.py`)
+7. **Router 등록** (`main.py`)
 
-# 프로그램 매핑
-pgm_id: str                    # 현재 매핑된 프로그램 ID
-pgm_mapping_dt: datetime       # 마지막 매핑 일시
-pgm_mapping_user: str          # 마지막 매핑 사용자
+### 파일 수정 시 주의사항
+- **Model 변경** → DB 마이그레이션 필요
+- **Service 추가** → dependencies.py에 등록 필요
+- **Router 추가** → main.py에 등록 필요
+- **Response 타입 변경** → API 문서 자동 업데이트됨
 
-# 메타데이터
-is_active: bool                # 활성 상태
-create_dt: datetime            # 생성일시
-create_user: str               # 생성자 ⭐ 확인됨 (실제 존재)
-update_dt: datetime            # 수정일시
-update_user: str               # 수정자 ⭐ 확인됨 (실제 존재)
+---
+
+## 📚 참고 문서
+
+### Swagger UI
+```
+http://localhost:8000/docs
+```
+
+### 서버 실행
+```bash
+cd D:\project-template\chat-api\app\backend
+python -m uvicorn ai_backend.main:app --reload --port 8000
+```
+
+### 로그 파일
+```
+D:\project-template\chat-api\app\backend\logs\app.log
 ```
 
 ---
 
 ## ✨ 최근 변경사항
 
-### 2025-10-20 01:31:00 - Excel 업로드 및 에러 처리 개선 ⭐ UPDATE
+### 2025-10-28 - S3 스토리지 통합 완료 ⭐ NEW
+
+**구현 완료된 컴포넌트:**
+```
+1. ✅ utils/s3_client.py - S3 클라이언트 생성
+   - upload_file() - S3 업로드
+   - download_file() - S3 다운로드
+   - delete_file() - S3 삭제
+   - file_exists() - 존재 확인
+   - get_file_metadata() - 메타데이터 조회
+
+2. ✅ requirements.txt - boto3 패키지 추가
+   - boto3>=1.34.0
+   - botocore>=1.34.0
+
+3. ✅ simple_settings.py - S3 설정 필드 추가
+   - storage_type (local/s3)
+   - aws_access_key_id
+   - aws_secret_access_key
+   - aws_region
+   - s3_bucket_name
+   - s3_prefix
+
+4. ✅ .env - S3 환경 변수 추가
+   - STORAGE_TYPE=local (기본값)
+   - AWS_ACCESS_KEY_ID
+   - AWS_SECRET_ACCESS_KEY
+   - AWS_REGION=ap-northeast-2
+   - S3_BUCKET_NAME=plc-documents
+
+5. ✅ shared_core/services.py - DocumentService S3 지원
+   - __init__() - storage_type 체크 및 S3 클라이언트 초기화
+   - create_document_from_file() - S3/로컬 선택 저장
+   - download_document() - S3/로컬 선택 다운로드
+   - delete_document() - S3/로컬 선택 삭제
+```
+
+**주요 기능:**
+```
+• 환경 변수 기반 스토리지 전환
+  - STORAGE_TYPE=local → 로컬 파일 시스템
+  - STORAGE_TYPE=s3 → Amazon S3
+
+• 투명한 통합
+  - API 엔드포인트 변경 없음
+  - 기존 코드 호환성 유지
+
+• 메타데이터 저장
+  - storage_type: "s3" or "local"
+  - s3_key: S3 객체 키
+  - s3_url: S3 접근 URL
+
+• 자동 폴백
+  - S3 초기화 실패 시 로컬 모드로 전환
+  - 에러 로그 남기고 서비스 계속 운영
+```
+
+**사용 방법:**
+```bash
+# 로컬 모드 (기본)
+STORAGE_TYPE=local
+
+# S3 모드
+STORAGE_TYPE=s3
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+S3_BUCKET_NAME=plc-documents
+```
+
+**참고 문서:**
+```
+docs/S3_STORAGE_IMPLEMENTATION.md - 상세 구현 가이드
+docs/S3_STORAGE_INTEGRATION.md - 작업 컨텍스트
+```
+
+---
+
+### 2025-10-21 13:50 - PLC 트리 API 응답 구조 개선
+
+**변경사항:**
+```
+1. ✅ plc_service.py - _build_hierarchy() 메서드
+   - Unit 내부 PLC 정보를 info 리스트로 감쌈
+   - create_dt를 ISO 포맷으로 변환
+
+2. ✅ plc_service.py - _convert_to_response() 메서드
+   - 키 이름 축약 (plant→plt, processes→procList 등)
+   - JSON 응답 크기 약 20% 감소
+
+3. ✅ plc_router.py - get_plcs_tree() API
+   - docstring 업데이트
+   - 새 응답 구조 예시 추가
+```
+
+---
+
+### 2025-10-20 01:31 - Excel 업로드 및 에러 처리 개선
 
 **수정된 컴포넌트:**
 ```
 1. ✅ document_service.py - metadata 처리 개선
-   - create_document_from_file()에 metadata_json 파라미터 전달
-   - upload_path 키 사용 (file_path 대신)
-   - update_document() 메서드로 metadata 업데이트
-   - 업데이트 성공/실패 로깅 추가
-
 2. ✅ template_service.py - HandledException 사용법 수정
-   - ResponseCode를 첫 번째 인자로 전달
-   - msg 파라미터 사용
-   - http_status_code 선택적 지정
-   - INVALID_INPUT → INVALID_DATA_FORMAT/REQUIRED_FIELD_MISSING 변경
-
 3. ✅ requirements.txt - openpyxl 추가
-   - pandas의 Excel 읽기 기능을 위해 필요
-```
-
-**주요 버그 수정:**
-```
-• metadata 파라미터 전달 문제 해결
-  - create_document_from_file(metadata_json=metadata) 형태로 전달
-  - shared_core의 **additional_metadata로 받음
-  
-• file_path 키 에러 해결
-  - result.get('upload_path') or result.get('file_path') 사용
-  - shared_core가 반환하는 실제 키명 확인
-  
-• update_metadata() 메서드 없음 해결
-  - DocumentCRUD.update_document(metadata_json=metadata) 사용
-  - **kwargs 형태로 전달
-  - hasattr() 검증으로 안전성 확보
-  
-• HandledException 사용법 오류 수정
-  - status_code, error_code, message → ResponseCode, msg, http_status_code
-  - ResponseCode Enum 값을 첫 번째 인자로 전달
-```
-
-**테스트 결과:**
-```
-✅ Excel 파일 업로드 성공
-✅ DOCUMENTS 테이블에 metadata 저장 성공
-✅ Excel 파싱 성공
-✅ PGM_TEMPLATE 테이블에 Bulk Insert 성공
-✅ metadata에 template_parse_result 추가 성공
 ```
 
 ---
 
-### 2025-10-19 15:23:00 - 템플릿 관리 기능 구현 완료 (일요일 오후 3시 23분)
+### 2025-10-19 15:23 - 템플릿 관리 기능 구현 완료
 
 **구현 완료된 컴포넌트:**
 ```
 1. ✅ template_models.py - PgmTemplate 모델
-   - PGM_TEMPLATE 테이블 (프로그램 구조 템플릿)
-   - DOCUMENT_ID 연결 (원본 Excel 파일)
-
 2. ✅ template_crud.py - CRUD 작업
-   - bulk_create() - 일괄 생성
-   - get_templates_by_pgm() - 프로그램별 조회
-   - delete_by_pgm_id() - 프로그램별 삭제
-   - search_templates() - 검색 기능
-
 3. ✅ template_response.py - Response 타입
-   - TemplateTreeResponse - 트리 구조 응답
-   - TemplateListResponse - 목록 응답
-   - TemplateStatsResponse - 통계 응답
-
 4. ✅ template_service.py - 비즈니스 로직
-   - parse_and_save() - Excel 파싱 및 저장
-   - get_template_tree() - 계층 구조 조회
-   - _build_template_hierarchy() - 트리 변환
-
-5. ✅ document_service.py - 업로드 통합 ⭐ 업데이트 (2025-10-20)
-   - metadata_json 파라미터로 전달 (metadata 대신)
-   - upload_path 키 사용 (file_path 대신)
-   - update_document() 사용하여 metadata 업데이트
-   - 업데이트 성공/실패 로깅
-
+5. ✅ document_service.py - 업로드 통합
 6. ✅ template_router.py - API 엔드포인트
-   - GET /v1/templates/{pgm_id} - 트리 구조 조회
-   - GET /v1/templates - 목록 조회
-   - DELETE /v1/templates/{pgm_id} - 삭제
-   - GET /v1/templates-summary - 통계
-
 7. ✅ dependencies.py - 의존성 주입
-   - get_template_service() 추가
-
 8. ✅ main.py - Router 등록
-   - template_router 등록 완료
-
-9. ✅ requirements.txt - 패키지 추가
-   - openpyxl>=3.0.0 추가 (Excel 지원)
-```
-
-**기능 설명:**
-```
-• Excel 파일 업로드 통합
-  - 기존 document_router의 /v1/upload 사용
-  - document_type="pgm_template" 지정
-  - metadata에 pgm_id 포함 필수 ⭐
-  - metadata='{"pgm_id": "PGM001"}' 형식
-  
-• pgm_id 흐름 ⭐
-  1. Client: metadata='{"pgm_id": "PGM001"}' 전송
-  2. document_router: JSON 파싱 → {'pgm_id': 'PGM001'}
-  3. document_service: DOCUMENTS 테이블 METADATA_JSON 컬럼에 저장
-  4. document_service: METADATA_JSON에서 pgm_id 추출
-  5. template_service: pgm_id='PGM001' 사용하여 Excel 파싱
-  6. PGM_TEMPLATE: 각 행마다 PGM_ID='PGM001' 저장
-  
-• 자동 Excel 파싱
-  - pandas로 Excel 읽기
-  - 필수 컬럼 검증 (PGM ID, Folder ID, Logic ID 등)
-  - PGM_TEMPLATE 테이블에 Bulk Insert
-  - 기존 템플릿 덮어쓰기
-
-• 계층 구조 조회
-  - Folder → Sub Folder → Logic 3단계 계층
-  - 통계 정보 포함
-  - 원본 문서 연결 (DOCUMENT_ID)
-
-• 검색 및 필터링
-  - pgm_id, folder_id, logic_name으로 검색
-  - 페이지네이션 지원
-```
-
-**사용 예시:**
-```bash
-# 1. Excel 파일 업로드 (⭐ metadata에 pgm_id 필수!)
-curl -X POST http://localhost:8000/v1/upload \
-  -F "file=@template.xlsx" \
-  -F "user_id=admin" \
-  -F "document_type=pgm_template" \
-  -F 'metadata={"pgm_id": "PGM001"}'
-
-# 2. 템플릿 트리 조회
-curl http://localhost:8000/v1/templates/PGM001
-
-# 3. 템플릿 목록 조회
-curl "http://localhost:8000/v1/templates?pgm_id=PGM001&page=1&page_size=100"
-
-# 4. 템플릿 삭제
-curl -X DELETE http://localhost:8000/v1/templates/PGM001
-```
-
-**데이터 흐름:**
-```
-Excel 파일 + metadata={"pgm_id": "PGM001"}
-    ↓
-POST /v1/upload (document_type="pgm_template")
-    ↓
-1. document_router: metadata JSON 파싱
-    metadata='...'' → parsed_metadata={'pgm_id': 'PGM001'}
-    ↓
-2. document_service: DOCUMENTS 테이블에 저장
-    METADATA_JSON 컬럼에 {'pgm_id': 'PGM001'} 저장
-    ↓
-3. document_service: METADATA_JSON에서 pgm_id 추출
-    pgm_id = result['metadata_json']['pgm_id']  → 'PGM001'
-    ↓
-4. template_service.parse_and_save() 호출
-    pgm_id='PGM001' 전달
-    ↓
-5. Excel 파싱 (pandas)
-    필수 컬럼: PGM ID, Folder ID, Logic ID 등
-    ↓
-6. PGM_TEMPLATE 테이블에 Bulk Insert
-    각 행마다 PGM_ID='PGM001' 저장
-    ↓
-7. metadata_json에 파싱 결과 저장
-    template_parse_result 추가
 ```
 
 ---
 
-### 2025-10-19 02:19:00 - PLC 트리 조회 API 구현 완료 (일요일 오전 2시 19분)
+### 2025-10-19 02:19 - PLC 트리 조회 API 구현 완료
 
 **구현 완료된 컴포넌트:**
 ```
 1. ✅ plc_router.py - get_plcs_tree() 엔드포인트
-   - GET /v1/plcs/tree?is_active=true
-   - PlcTreeResponse 반환
-   - 계층 구조 트리 조회
-
 2. ✅ plc_service.py - get_plcs_tree() 메서드
-   - PLC 목록 조회 후 계층 구조 변환
-   - 통계 정보 포함 (total_count, filtered_count)
-   - timestamp 추가
-
 3. ✅ plc_response.py - PlcTreeResponse 타입
-   - data: List[PlcHierarchy]
-   - total_count: int
-   - filtered_count: int
-   - timestamp: datetime
-
 4. ✅ plc-tree.html - 트리 시각화 페이지
-   - 심플하고 미니멀한 디자인
-   - 펼치기/접기 기능
-   - JSON 원본 보기
-   - 실시간 트리 렌더링
-```
-
-**API 비교:**
-```
-기존: GET /v1/plc/hierarchy  (PlcHierarchyResponse)
-새로: GET /v1/plcs/tree      (PlcTreeResponse) ⭐
-
-차이점:
-- /plcs/tree는 통계 정보 포함 (total_count, filtered_count)
-- /plcs/tree는 timestamp 포함
-- 더 구조화된 응답 형식
 ```
 
 ---
 
 ### 2025-10-18 - PLC API 엔드포인트 단수/복수 구분
 
-### ⭐ PLC API 엔드포인트 단수/복수 구분 (Singular/Plural)
+**변경사항:**
 ```
-1. ✅ plc_router.py 라우트 경로 변경
-   - 단일 PLC: /plcs/{plc_id} → /plc/{plc_id}
-   - 컬렉션: /plcs (유지)
-   - 라우팅 충돌 해결 및 RESTful 설계 개선
-
-2. ✅ 변경된 엔드포인트 (단일 리소스)
-   - GET    /v1/plc/{plc_id}              # PLC 조회
-   - PUT    /v1/plc/{plc_id}              # PLC 수정
-   - DELETE /v1/plc/{plc_id}              # PLC 삭제
-   - POST   /v1/plc/{plc_id}/restore      # PLC 복원
-   - GET    /v1/plc/{plc_id}/exists       # 존재 여부
-   - POST   /v1/plc/{plc_id}/mapping      # 프로그램 매핑
-   - DELETE /v1/plc/{plc_id}/mapping      # 매핑 해제
-   - GET    /v1/plc/{plc_id}/history      # 매핑 이력
-
-3. ✅ 유지된 엔드포인트 (컬렉션)
-   - POST   /v1/plcs                      # PLC 생성
-   - GET    /v1/plcs                      # PLC 목록
-   - GET    /v1/plcs/search/keyword       # 검색
-   - GET    /v1/plcs/count/summary        # 개수
-   - GET    /v1/plcs/hierarchy/values     # 계층 값
-   - GET    /v1/plcs/tree                 # 트리 구조 ⭐
-   - GET    /v1/plcs/unmapped/list        # 미매핑 목록
-
-4. ✅ HTML 테스트 페이지 추가
-   - plc-tree.html 생성 (심플 디자인)
-   - main.py에 /plc-tree 경로 추가
-   - 트리 구조 시각화, 펼치기/접기, JSON 보기 기능
-   - Console 디버그 로그 추가
-
-5. ✅ PostgreSQL 대소문자 구분 이슈 해결
-   - 테이블명에 큰따옴표 사용 ("PLC_MASTER")
-   - check_db.py 스크립트 생성
+1. ✅ 단일 PLC: /plcs/{plc_id} → /plc/{plc_id}
+2. ✅ 컬렉션: /plcs (유지)
+3. ✅ HTML 테스트 페이지 추가 (plc-tree.html)
+4. ✅ PostgreSQL 대소문자 구분 이슈 해결
 ```
 
-### ⭐ PLC 계층 구조 트리 조회 API 추가 (2025-10-17)
+---
+
+### 2025-10-17 - 프로그램 관리 기능 구현 완료
+
+**구현 완료된 컴포넌트:**
 ```
-1. ✅ plc_hierarchy_response.py 생성
-   - UnitData, EquipmentGroup, Line, Process, Plant, PlcTreeResponse 모델
-
-2. ✅ plc_service.py 메서드 추가
-   - get_plc_hierarchy(is_active) - 계층 구조 조회
-   - _build_hierarchy(plcs) - 딕셔너리 변환
-   - _convert_to_response(hierarchy) - Response 형식 변환
-
-3. ✅ plc_router.py 엔드포인트 추가
-   - GET /v1/plcs/tree?is_active=true
-   - 파라미터: is_active만 사용 (plant, process 제거)
-
-4. ✅ PLC_MASTER 테이블 구조 확인
-   - CREATE_USER, UPDATE_USER 컬럼 실제 존재 확인
-   - 기존 문서와 실제 코드 일치 확인
-```
-
-### ⭐ PLC 트리 조회 API 응답 구조 변경 (2025-10-21 13:50)
-```
-1. ✅ plc_service.py 수정
-   - _build_hierarchy() 메서드:
-     • Equipment Group을 딕셔너리로 변경
-     • Unit을 딕셔너리로 변경
-     • Unit 내부 PLC 정보를 info 리스트로 감쌈
-     • create_dt를 ISO 포맷으로 변환 (isoformat())
-   
-   - _convert_to_response() 메서드:
-     • 키 이름 축약 (plant→plt, processes→procList 등)
-     • List 접미사 일관성 적용
-
-2. ✅ plc_router.py 수정
-   - get_plcs_tree() API docstring 업데이트
-   - 새로운 응답 구조 예시 추가
-
-3. ✅ 응답 구조 변경사항 (AS-IS → TO-BE)
-   | AS-IS | TO-BE | 설명 |
-   |-------|-------|------|
-   | plant | plt | Plant 키 축약 |
-   | processes | procList | Process 리스트 |
-   | process | proc | Process 키 축약 |
-   | lines | lineList | Line 리스트 |
-   | equipment_groups | eqGrpList | Equipment Group 리스트 |
-   | equipment_group | eqGrp | Equipment Group 키 축약 |
-   | unit_data | unitList | Unit 리스트 |
-   | 직접 데이터 | info[] | Unit 정보를 info 배열로 감쌈 ⭐ |
-
-4. ✅ 주요 개선사항
-   - JSON 응답 크기 약 20% 감소 (키 이름 축약)
-   - info 배열로 확장성 향상 (향후 여러 PLC 지원 가능)
-   - 일관된 네이밍 패턴 (List 접미사)
-   - ISO 포맷 날짜 (isoformat())
-
-5. ✅ 코드 변경 위치
-   - ai_backend/api/services/plc_service.py (2개 메서드)
-   - ai_backend/api/routers/plc_router.py (1개 docstring)
-
-⚠️ Breaking Change: 기존 클라이언트 코드 수정 필수
-   - 모든 키 이름 변경
-   - Unit 구조 변경 (직접 데이터 → info 배열)
+1. ✅ Program 모델 생성
+2. ✅ PgmMappingHistory 모델 생성
+3. ✅ program_crud.py, mapping_crud.py 생성
+4. ✅ program_service.py, pgm_history_service.py 생성
+5. ✅ program_router.py, pgm_history_router.py 생성
+6. ✅ Program API 5개 엔드포인트 추가
+7. ✅ PGM History API 6개 엔드포인트 추가
 ```
 
 ---
@@ -578,21 +849,13 @@ POST /v1/upload (document_type="pgm_template")
 
 - **PLC 관련**: plc_models.py, plc_crud.py, plc_service.py, plc_router.py
 - **프로그램 관련**: program_models.py, program_crud.py, program_service.py, program_router.py
-- **매핑 이력**: mapping_models.py, mapping_crud.py, pgm_history_service.py, pgm_history_router.py
-- **템플릿 관련**: template_models.py, template_crud.py, template_service.py, template_router.py ⭐ NEW
-- **계층 구조**: plc_hierarchy_response.py, get_plc_hierarchy(), /v1/plcs/tree
+- **매핑 이력**: pgm_mapping_models.py, pgm_mapping_crud.py, pgm_history_service.py, pgm_history_router.py
+- **템플릿 관련**: template_models.py, template_crud.py, template_service.py, template_router.py
 - **문서 관리**: document_models.py, document_service.py, document_router.py
-
----
-
-## 🚀 서버 실행
-
-```bash
-cd D:\project-template\chat-api\app\backend
-python -m uvicorn ai_backend.main:app --reload --port 8000
-```
-
-**Swagger UI:** http://localhost:8000/docs
+- **S3 스토리지**: s3_client.py, shared_core/services.py ⭐ NEW
+- **채팅**: chat_models.py, llm_chat_service.py, chat_router.py
+- **설정**: simple_settings.py, dependencies.py, .env ⭐
+- **에러 처리**: exceptions.py, response_code.py, global_exception_handlers.py
 
 ---
 

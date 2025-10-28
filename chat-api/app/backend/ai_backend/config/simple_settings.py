@@ -156,6 +156,29 @@ class Settings(BaseSettings):
         env="UPLOAD_ALLOWED_TYPES"
     )
     
+    # Storage Configuration (S3)
+    # ==========================================
+    # 스토리지 타입: local (로컬 디스크) 또는 s3 (Amazon S3)
+    # - 개발: local (로컬 개발 편의)
+    # - 프로덕션: s3 (확장성, 고가용성)
+    storage_type: str = Field(default="local", env="STORAGE_TYPE")
+    
+    # AWS 자격증명
+    aws_access_key_id: str = Field(default="", env="AWS_ACCESS_KEY_ID")
+    aws_secret_access_key: str = Field(default="", env="AWS_SECRET_ACCESS_KEY")
+    
+    # AWS 리전
+    # - ap-northeast-2: 서울 리전 (한국)
+    # - us-east-1: 버지니아 리전 (미국 동부)
+    aws_region: str = Field(default="ap-northeast-2", env="AWS_REGION")
+    
+    # S3 버킷명
+    s3_bucket_name: str = Field(default="", env="S3_BUCKET_NAME")
+    
+    # S3 키 접두사 (버킷 내 폴더 구조)
+    # - 예: "uploads/" -> s3://bucket/uploads/user_id/filename
+    s3_prefix: str = Field(default="uploads/", env="S3_PREFIX")
+    
     # 로깅 상세 설정
     # ==========================================
     # 에러 로그에 스택 트레이스 포함 여부

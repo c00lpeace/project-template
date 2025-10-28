@@ -26,13 +26,39 @@ class DocumentService:
 
     def __init__(self, db: Session, upload_base_path: str = None):
         self.db = db
-        self.upload_base_path = (
-            Path(upload_base_path) if upload_base_path else Path("uploads")
-        )
-        self.upload_base_path.mkdir(parents=True, exist_ok=True)
         self.document_crud = DocumentCRUD(db)
         self.chunk_crud = DocumentChunkCRUD(db)
         self.job_crud = ProcessingJobCRUD(db)
+        
+        # Storage 타입 체크
+        try:
+            from ai_backend.config.simple_settings import settings
+            self.storage_type = settings.storage_type
+        except:
+            self.storage_type = "local"
+        
+        # S3 또는 로컬 저장소 초기화
+        if self.storage_type == "s3":
+            try:
+                from ai_backend.utils.s3_client import S3Client
+                self.s3_client = S3Client(
+                    aws_access_key_id=settings.aws_access_key_id,
+                    aws_secret_access_key=settings.aws_secret_access_key,
+                    region_name=settings.aws_region,
+                    bucket_name=settings.s3_bucket_name
+                )
+                self.s3_prefix = settings.s3_prefix
+                logger.info("✅ S3 스토리지 모드 활성화")
+            except Exception as e:
+                logger.error(f"❌ S3 초기화 실패, 로컬 모드로 전환: {e}")
+                self.storage_type = "local"
+        
+        if self.storage_type == "local":
+            self.upload_base_path = (
+                Path(upload_base_path) if upload_base_path else Path("uploads")
+            )
+            self.upload_base_path.mkdir(parents=True, exist_ok=True)
+            logger.info("✅ 로컬 스토리지 모드 활성화")
 
     def _get_file_extension(self, filename: str) -> str:
         """파일 확장자 추출 (. 제거)"""
@@ -94,16 +120,31 @@ class DocumentService:
                     f"doc_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file_hash[:8]}"
                 )
 
-            # 파일 저장
+            # 파일 저장 (S3 또는 로컬)
             file_key = self._generate_file_key(user_id, filename)
-            upload_path = self._get_upload_path(file_key)
-
-            # 디렉토리 생성
-            upload_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # 파일 저장
-            with open(upload_path, "wb") as f:
-                f.write(file_content)
+            
+            if self.storage_type == "s3":
+                # S3 저장
+                s3_key = f"{self.s3_prefix}{file_key}"
+                s3_url = self.s3_client.upload_file(
+                    file_content=file_content,
+                    key=s3_key,
+                    content_type=file_type
+                )
+                upload_path = s3_url  # S3 URL을 upload_path로 저장
+                additional_metadata['s3_key'] = s3_key
+                additional_metadata['s3_url'] = s3_url
+                additional_metadata['storage_type'] = 's3'
+                logger.info(f"✅ S3 저장 완료: {s3_url}")
+            else:
+                # 로컬 저장 (기존 로직)
+                upload_path = self._get_upload_path(file_key)
+                upload_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(upload_path, "wb") as f:
+                    f.write(file_content)
+                upload_path = str(upload_path)
+                additional_metadata['storage_type'] = 'local'
+                logger.info(f"✅ 로컬 저장 완료: {upload_path}")
 
             # DB에 메타데이터 저장
             if existing_doc and existing_doc.status in ["failed", "processing"]:
@@ -230,13 +271,25 @@ class DocumentService:
             if user_id and document.user_id != user_id and not document.is_public:
                 raise PermissionError("문서에 접근할 권한이 없습니다.")
 
-            # 파일 읽기
-            upload_path = Path(document.upload_path)
-            if not upload_path.exists():
-                raise FileNotFoundError("파일이 존재하지 않습니다.")
-
-            with open(upload_path, "rb") as f:
-                file_content = f.read()
+            # S3 또는 로컬에서 파일 가져오기
+            metadata = document.metadata_json or {}
+            storage_type = metadata.get('storage_type', 'local')
+            
+            if storage_type == 's3':
+                # S3에서 다운로드
+                s3_key = metadata.get('s3_key')
+                if not s3_key:
+                    raise Exception("S3 키를 찾을 수 없습니다")
+                file_content = self.s3_client.download_file(s3_key)
+                logger.info(f"✅ S3에서 다운로드: {s3_key}")
+            else:
+                # 로컬 파일 읽기 (기존 로직)
+                upload_path = Path(document.upload_path)
+                if not upload_path.exists():
+                    raise FileNotFoundError("파일이 존재하지 않습니다.")
+                with open(upload_path, "rb") as f:
+                    file_content = f.read()
+                logger.info(f"✅ 로컬에서 다운로드: {upload_path}")
 
             return file_content, document.original_filename, document.file_type
 
@@ -264,9 +317,21 @@ class DocumentService:
                 self.chunk_crud.delete_document_chunks(document_id)
 
                 # 실제 파일도 삭제 (선택사항)
-                upload_path = Path(document.upload_path)
-                if upload_path.exists():
-                    upload_path.unlink()
+                metadata = document.metadata_json or {}
+                storage_type = metadata.get('storage_type', 'local')
+                
+                if storage_type == 's3':
+                    # S3에서 삭제
+                    s3_key = metadata.get('s3_key')
+                    if s3_key:
+                        self.s3_client.delete_file(s3_key)
+                        logger.info(f"✅ S3 파일 삭제: {s3_key}")
+                else:
+                    # 로컬 파일 삭제
+                    upload_path = Path(document.upload_path)
+                    if upload_path.exists():
+                        upload_path.unlink()
+                        logger.info(f"✅ 로컬 파일 삭제: {upload_path}")
 
             return success
 
