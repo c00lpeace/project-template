@@ -71,7 +71,7 @@ class DocumentService(BaseDocumentService):
                 is_public=is_public,
                 permissions=permissions,
                 document_type=document_type,
-                **metadata  # ⭐ metadata_json으로 전달 (**additional_metadata로 받음)
+                **(metadata or {})  # ⭐ metadata가 None이면 빈 딕셔너리 사용
             )
             
             # ⭐ NEW: document_type이 "pgm_template"이면 Excel 파싱
