@@ -1,6 +1,6 @@
 # 🏗️ PLC-Program Mapping System - 프로젝트 참조 가이드
 
-> **최종 업데이트:** 2025-10-28 (화요일)  
+> **최종 업데이트:** 2025-10-30 (수요일) 오후 4시 30분  
 > **목적:** Claude가 매번 파일을 검색하지 않고 빠르게 프로젝트 구조를 파악하기 위한 참조 문서
 
 ---
@@ -36,7 +36,7 @@ ai_backend/
 │       ├── pgm_history_service.py # 매핑 이력 비즈니스 로직
 │       ├── plc_service.py        # PLC 관리 비즈니스 로직
 │       ├── program_service.py    # 프로그램 관리 비즈니스 로직
-│       ├── template_service.py   # 템플릿 관리 비즈니스 로직
+│       ├── template_service.py   # 템플릿 관리 비즈니스 로직 ✨
 │       └── user_service.py       # 사용자 관리 비즈니스 로직
 │
 ├── cache/                        # Cache Layer
@@ -102,7 +102,8 @@ ai_backend/
 │
 ├── utils/                        # Utility Functions
 │   ├── logging_utils.py          # 로깅 유틸
-│   ├── s3_client.py              # AWS S3 클라이언트 ⭐ NEW
+│   ├── s3_client.py              # AWS S3 클라이언트
+│   ├── storage_helper.py         # S3/로컬 스토리지 통합 헬퍼 ⭐ NEW
 │   └── uuid_gen.py               # UUID 생성
 │
 └── main.py                       # FastAPI Application Entry Point
@@ -187,7 +188,7 @@ class Document:
     upload_dt: datetime            # 업로드 일시
     user_id: str                   # 업로드 사용자
     is_public: bool                # 공개 여부
-    metadata_json: dict            # 메타데이터 (JSON) ⭐ S3 정보 포함
+    metadata_json: dict            # 메타데이터 (JSON) - S3 정보 포함
 ```
 
 ### 5. **PGM_TEMPLATE** (template_models.py)
@@ -268,14 +269,14 @@ GET    /v1/chat/history/{user_id}  # 채팅 이력
 
 ### Document API (document_router.py)
 ```
-POST   /v1/upload                   # 문서 업로드 (S3/로컬 지원) ⭐
+POST   /v1/upload                   # 문서 업로드 (S3/로컬 지원)
 GET    /v1/documents                # 문서 목록
 GET    /v1/documents/{document_id}  # 문서 조회
-DELETE /v1/documents/{document_id}  # 문서 삭제 (S3/로컬) ⭐
+DELETE /v1/documents/{document_id}  # 문서 삭제 (S3/로컬)
 POST   /v1/upload-zip               # ZIP 파일 업로드
 GET    /v1/zip/{document_id}/contents  # ZIP 내부 파일 목록
 GET    /v1/zip/{document_id}/extract/{file_path}  # ZIP 파일 추출
-GET    /v1/documents/{document_id}/download  # 다운로드 (S3/로컬) ⭐
+GET    /v1/documents/{document_id}/download  # 다운로드 (S3/로컬)
 ```
 
 ### PLC API (plc_router.py) - 16개
@@ -365,7 +366,9 @@ Model (SQLAlchemy)        # ORM Layer
     ↓
 Database (MySQL)          # Database Layer
 
-Storage (로컬/S3) ⭐ NEW  # File Storage Layer
+Storage (로컬/S3)         # File Storage Layer
+    ↑
+StorageHelper ⭐          # 통합 스토리지 유틸리티
 ```
 
 ### 의존성 주입 (Dependency Injection)
@@ -430,7 +433,7 @@ LLM_PROVIDER=openai  # openai, anthropic
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Storage Configuration ⭐ NEW
+# Storage Configuration
 STORAGE_TYPE=local                    # local 또는 s3
 UPLOAD_BASE_PATH=./uploads
 AWS_ACCESS_KEY_ID=
@@ -465,7 +468,7 @@ class Settings(BaseSettings):
     openai_api_key: str
     anthropic_api_key: str
     
-    # Storage (S3) ⭐ NEW
+    # Storage (S3)
     storage_type: str = Field(default="local", env="STORAGE_TYPE")
     upload_base_path: str = Field(default="./uploads", env="UPLOAD_BASE_PATH")
     aws_access_key_id: str = Field(default="", env="AWS_ACCESS_KEY_ID")
@@ -500,7 +503,8 @@ class Settings(BaseSettings):
 from ai_backend.database.models.plc_models import PLCMaster
 from ai_backend.api.services.plc_service import PlcService
 from ai_backend.types.response.exceptions import HandledException
-from ai_backend.utils.s3_client import S3Client  # ⭐ NEW
+from ai_backend.utils.s3_client import S3Client
+from ai_backend.utils.storage_helper import StorageHelper  # ⭐ NEW
 ```
 
 ### 3. **CRUD 메서드 패턴**
@@ -556,7 +560,39 @@ def create_xxx(
 
 ## 🎯 핵심 기능 Flow
 
-### ⭐ NEW: S3 파일 업로드/다운로드 Flow (2025-10-28)
+### ⭐ NEW: StorageHelper를 사용한 S3/로컬 파일 처리 (2025-10-30)
+```
+# 메모리 기반 처리 (작은 파일 < 10MB)
+from ai_backend.utils.storage_helper import StorageHelper
+
+stream = StorageHelper.get_file_stream(document)
+df = pd.read_excel(stream)
+
+---
+
+# 임시 파일 기반 처리 (큰 파일 >= 10MB)
+with StorageHelper.download_to_temp(document, suffix='.xlsx') as tmp_path:
+    df = pd.read_excel(tmp_path)
+    # 처리...
+# with 블록 종료 시 임시 파일 자동 삭제
+
+---
+
+# 하이브리드 전략 (template_service.py)
+file_size = document.get('file_size', 0)
+THRESHOLD = 10 * 1024 * 1024  # 10MB
+
+if file_size < THRESHOLD:
+    # 메모리 기반
+    stream = StorageHelper.get_file_stream(document)
+    df = pd.read_excel(stream)
+else:
+    # 임시 파일 기반
+    with StorageHelper.download_to_temp(document) as path:
+        df = pd.read_excel(path)
+```
+
+### 1. **S3 파일 업로드/다운로드 Flow**
 ```
 Client → POST /v1/upload (파일 업로드)
     ↓
@@ -580,17 +616,14 @@ document_router.download_document()
     ↓
 document_service.download_document()
     ↓
-[metadata_json에서 storage_type 확인]
+[StorageHelper로 S3/로컬 자동 판단] ⭐ NEW
     ↓
-if storage_type == "s3":
-    S3Client.download_file(s3_key) → S3에서 다운로드
-else:
-    로컬 파일 시스템에서 읽기
+StorageHelper.get_file_bytes(document)
     ↓
 Response: StreamingResponse (파일 스트림)
 ```
 
-### 1. **PLC-프로그램 매핑 Flow**
+### 2. **PLC-프로그램 매핑 Flow**
 ```
 Client → POST /v1/plc/{plc_id}/mapping
     ↓
@@ -603,7 +636,7 @@ plc_crud.update_program_mapping()  # PLC_MASTER.pgm_id 업데이트
 mapping_crud.create_history()      # PGM_MAPPING_HISTORY 기록
 ```
 
-### 2. **프로그램 생성 Flow**
+### 3. **프로그램 생성 Flow**
 ```
 Client → POST /v1/programs
     ↓
@@ -614,7 +647,7 @@ program_service.create_program()
 program_crud.create_program()      # PROGRAMS 테이블에 INSERT
 ```
 
-### 3. **매핑 이력 조회 Flow**
+### 4. **매핑 이력 조회 Flow**
 ```
 Client → GET /v1/pgm-history/plc/{plc_id}
     ↓
@@ -625,7 +658,7 @@ pgm_history_service.get_histories_by_plc()
 mapping_crud.get_histories_by_plc()  # PGM_MAPPING_HISTORY 조회
 ```
 
-### 4. **Excel 템플릿 업로드 Flow**
+### 5. **Excel 템플릿 업로드 Flow (하이브리드 전략 적용)** ⭐
 ```
 Client → POST /v1/upload (document_type="pgm_template")
     ↓
@@ -636,6 +669,17 @@ document_service.upload_document()
 document_service.create_document_from_file() → DOCUMENTS 저장
     ↓
 template_service.parse_and_save() → Excel 파싱
+    ↓
+[StorageHelper 하이브리드 전략] ⭐
+    ↓
+if file_size < 10MB:
+    # 메모리 기반 (빠름)
+    stream = StorageHelper.get_file_stream(document)
+    df = pd.read_excel(stream)
+else:
+    # 임시 파일 기반 (안정)
+    with StorageHelper.download_to_temp(document) as path:
+        df = pd.read_excel(path)
     ↓
 template_crud.bulk_create() → PGM_TEMPLATE Bulk Insert
 ```
@@ -683,7 +727,118 @@ D:\project-template\chat-api\app\backend\logs\app.log
 
 ## ✨ 최근 변경사항
 
-### 2025-10-28 - S3 스토리지 통합 완료 ⭐ NEW
+### 2025-10-30 (오후 4:30) - S3 파일 처리 개선 (Phase 1-3 완료) ⭐ NEW
+
+**구현 완료된 컴포넌트:**
+
+#### 1. StorageHelper 유틸리티 생성 (Phase 1)
+```
+파일: ai_backend/utils/storage_helper.py
+
+주요 기능:
+✅ S3/로컬 스토리지 통합 인터페이스
+✅ 메모리 기반 처리 (BytesIO)
+   - get_file_bytes() - 파일을 bytes로 다운로드
+   - get_file_stream() - BytesIO 스트림 반환
+   - get_file_text() - 텍스트 파일 읽기
+   
+✅ 임시 파일 다운로드 (자동 정리)
+   - download_to_temp() - Context Manager
+   - with 블록 종료 시 자동 삭제
+   
+✅ 싱글톤 S3 클라이언트
+   - _get_s3_client() - 단일 인스턴스 관리
+
+특징:
+• metadata_json.storage_type 기반 자동 판단
+• S3와 로컬을 동일 인터페이스로 처리
+• 에러 핸들링 및 로깅 내장
+```
+
+#### 2. template_service.py 하이브리드 전략 적용 (Phase 2)
+```
+파일: ai_backend/api/services/template_service.py
+
+주요 변경:
+✅ StorageHelper 통합
+✅ 하이브리드 전략 구현
+   - 작은 파일 (< 10MB): 메모리 기반 (빠름)
+   - 큰 파일 (>= 10MB): 임시 파일 기반 (안정)
+
+코드:
+```python
+THRESHOLD_SIZE = 10 * 1024 * 1024  # 10MB
+
+if file_size < THRESHOLD_SIZE:
+    # 메모리 기반
+    stream = StorageHelper.get_file_stream(document)
+    df = pd.read_excel(stream)
+else:
+    # 임시 파일 기반
+    with StorageHelper.download_to_temp(document, '.xlsx') as path:
+        df = pd.read_excel(path)
+```
+
+장점:
+• 작은 파일: 빠른 처리 (메모리)
+• 큰 파일: 안정적 처리 (임시 파일)
+• 메모리 사용량 최적화
+```
+
+#### 3. document_service.py 통합 (Phase 3)
+```
+파일: ai_backend/api/services/document_service.py
+
+주요 변경:
+✅ pgm_template 타입 자동 파싱
+✅ template_service.parse_and_save() 호출
+✅ StorageHelper를 통한 S3/로컬 통합 처리
+
+플로우:
+1. 문서 업로드 → DOCUMENTS 저장
+2. document_type == "pgm_template" 체크
+3. template_service로 Excel 파싱
+4. StorageHelper가 S3/로컬 자동 처리
+5. PGM_TEMPLATE 테이블에 저장
+```
+
+**주요 개선사항:**
+```
+✅ 코드 중복 제거
+   - S3/로컬 처리 로직을 StorageHelper로 통합
+   
+✅ 성능 최적화
+   - 하이브리드 전략으로 파일 크기별 최적 처리
+   
+✅ 유지보수성 향상
+   - 스토리지 변경 시 StorageHelper만 수정
+   
+✅ 에러 처리 강화
+   - 통합된 에러 핸들링 및 로깅
+```
+
+**사용 예시:**
+```python
+# 서비스 레이어에서 사용
+from ai_backend.utils.storage_helper import StorageHelper
+
+# 1. 메모리 스트림
+stream = StorageHelper.get_file_stream(document)
+df = pd.read_excel(stream)
+
+# 2. 임시 파일 (자동 정리)
+with StorageHelper.download_to_temp(document) as path:
+    df = pd.read_excel(path)
+    # 처리...
+# with 종료 시 임시 파일 자동 삭제
+
+# 3. 텍스트 파일
+text = StorageHelper.get_file_text(document, encoding='utf-8')
+```
+
+---
+
+### 2025-10-28 - S3 스토리지 통합 완료
 
 **구현 완료된 컴포넌트:**
 ```
@@ -718,44 +873,6 @@ D:\project-template\chat-api\app\backend\logs\app.log
    - create_document_from_file() - S3/로컬 선택 저장
    - download_document() - S3/로컬 선택 다운로드
    - delete_document() - S3/로컬 선택 삭제
-```
-
-**주요 기능:**
-```
-• 환경 변수 기반 스토리지 전환
-  - STORAGE_TYPE=local → 로컬 파일 시스템
-  - STORAGE_TYPE=s3 → Amazon S3
-
-• 투명한 통합
-  - API 엔드포인트 변경 없음
-  - 기존 코드 호환성 유지
-
-• 메타데이터 저장
-  - storage_type: "s3" or "local"
-  - s3_key: S3 객체 키
-  - s3_url: S3 접근 URL
-
-• 자동 폴백
-  - S3 초기화 실패 시 로컬 모드로 전환
-  - 에러 로그 남기고 서비스 계속 운영
-```
-
-**사용 방법:**
-```bash
-# 로컬 모드 (기본)
-STORAGE_TYPE=local
-
-# S3 모드
-STORAGE_TYPE=s3
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-S3_BUCKET_NAME=plc-documents
-```
-
-**참고 문서:**
-```
-docs/S3_STORAGE_IMPLEMENTATION.md - 상세 구현 가이드
-docs/S3_STORAGE_INTEGRATION.md - 작업 컨텍스트
 ```
 
 ---
@@ -852,9 +969,9 @@ docs/S3_STORAGE_INTEGRATION.md - 작업 컨텍스트
 - **매핑 이력**: pgm_mapping_models.py, pgm_mapping_crud.py, pgm_history_service.py, pgm_history_router.py
 - **템플릿 관련**: template_models.py, template_crud.py, template_service.py, template_router.py
 - **문서 관리**: document_models.py, document_service.py, document_router.py
-- **S3 스토리지**: s3_client.py, shared_core/services.py ⭐ NEW
+- **스토리지 통합**: storage_helper.py, s3_client.py ⭐ NEW
 - **채팅**: chat_models.py, llm_chat_service.py, chat_router.py
-- **설정**: simple_settings.py, dependencies.py, .env ⭐
+- **설정**: simple_settings.py, dependencies.py, .env
 - **에러 처리**: exceptions.py, response_code.py, global_exception_handlers.py
 
 ---

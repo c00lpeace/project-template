@@ -30,15 +30,15 @@ class TemplateService:
     def parse_and_save(
         self,
         document_id: str,
-        file_path: str,
+        document: Dict,
         pgm_id: str,
         user_id: str
     ) -> Dict:
-        """Excel 파일 파싱 및 PGM_TEMPLATE 테이블 저장
+        """Excel 파일 파싱 및 PGM_TEMPLATE 테이블 저장 (S3/로컬 통합)
         
         Args:
             document_id: 문서 ID
-            file_path: Excel 파일 경로
+            document: 문서 딕셔너리 (metadata_json 포함)
             pgm_id: 프로그램 ID
             user_id: 사용자 ID
         
@@ -56,16 +56,29 @@ class TemplateService:
                     msg=f"프로그램을 찾을 수 없습니다: {pgm_id}"
                 )
             
-            # 2. Excel 파일 읽기 (S3 스토리지에서 파일 읽기 실패됨)
+            # 2. Excel 파일 읽기 (S3/로컬 통합, 하이브리드 전략)
             try:
-                #  # S3에서 다시 가져와서 파싱하는 식으로 수정필요
-                # s3_response = s3_client.get_object(Bucket=BUCKET_NAME, Key=s3_key)
-                # excel_content = s3_response['Body'].read()
-
-                df = pd.read_excel(file_path)
-                logger.info(f"Excel 파일 읽기 완료: {len(df)}행")
+                from ai_backend.utils.storage_helper import StorageHelper
+                
+                # 하이브리드 전략: 파일 크기에 따라 메모리 또는 임시 파일 사용
+                file_size = document.get('file_size', 0)
+                THRESHOLD_SIZE = 10 * 1024 * 1024  # 10MB
+                
+                if file_size < THRESHOLD_SIZE:
+                    # 작은 파일: 메모리 기반 (빠름)
+                    logger.info(f"📥 Excel 파일 메모리 기반 로드 시작: {file_size:,} bytes")
+                    file_stream = StorageHelper.get_file_stream(document)
+                    df = pd.read_excel(file_stream)
+                    logger.info(f"✅ Excel 파일 읽기 완료 (메모리): {len(df)}행")
+                else:
+                    # 큰 파일: 임시 파일 기반 (안정)
+                    logger.info(f"📥 Excel 파일 임시 다운로드 시작: {file_size:,} bytes")
+                    with StorageHelper.download_to_temp(document, suffix='.xlsx') as tmp_path:
+                        df = pd.read_excel(tmp_path)
+                        logger.info(f"✅ Excel 파일 읽기 완료 (임시 파일): {len(df)}행")
+                
             except Exception as e:
-                logger.error(f"Excel 파일 읽기 실패: {e}")
+                logger.error(f"❌ Excel 파일 읽기 실패: {e}")
                 raise HandledException(
                     ResponseCode.INVALID_DATA_FORMAT,
                     msg=f"Excel 파일을 읽을 수 없습니다: {str(e)}"

@@ -87,16 +87,10 @@ class DocumentService(BaseDocumentService):
                     if not pgm_id:
                         logger.warning(f"pgm_template 업로드 시 metadata에 pgm_id 필요: {result['document_id']}")
                     else:
-                        # Excel 파싱 및 PGM_TEMPLATE 테이블 저장
-                        # ⭐ file_path 대신 upload_path 사용
-                        file_path = result.get('upload_path') or result.get('file_path')
-                        if not file_path:
-                            logger.error(f"file_path를 찾을 수 없음: result keys = {list(result.keys())}")
-                            raise ValueError("file_path를 result에서 찾을 수 없습니다")
-                        
+                        # Excel 파싱 및 PGM_TEMPLATE 테이블 저장 (S3/로컬 통합)
                         parse_result = template_service.parse_and_save(
                             document_id=result['document_id'],
-                            file_path=file_path,
+                            document=result,  # ⭐ 전체 문서 객체 전달
                             pgm_id=pgm_id,
                             user_id=user_id
                         )
